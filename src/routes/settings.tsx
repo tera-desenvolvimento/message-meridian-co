@@ -98,9 +98,7 @@ function SettingsPanel() {
     setSaving(false);
   }
 
-  const webhookUrl = workspace?.id
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/whapi-webhook?workspace_id=${workspace.id}`
-    : "";
+  const webhookUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/whapi-webhook`;
 
   return (
     <div className="flex-1 overflow-y-auto">
