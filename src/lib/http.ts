@@ -162,14 +162,14 @@ export const api = {
     };
   },
 
-  async assignConversation(conversationId: string): Promise<Conversation> {
-    const uid = await getSessionUserId();
+  async assignConversation(conversationId: string, userId?: string): Promise<Conversation> {
+    const uid = userId ?? (await getSessionUserId());
     const { data, error } = await supabase
       .from("conversations")
       .update({ assigned_to: uid, status: "OPEN" })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, assigned_to",
+        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -179,6 +179,78 @@ export const api = {
       .eq("id", uid)
       .maybeSingle();
     return mapConversation({ ...data, assignee: prof ?? null });
+  },
+
+  async unassignConversation(conversationId: string): Promise<Conversation> {
+    const { data, error } = await supabase
+      .from("conversations")
+      .update({ assigned_to: null })
+      .eq("id", conversationId)
+      .select(
+        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+      )
+      .single();
+    if (error) throw error;
+    return mapConversation({ ...data, assignee: null });
+  },
+
+  async setConversationStatus(
+    conversationId: string,
+    status: "OPEN" | "PENDING" | "CLOSED",
+  ): Promise<Conversation> {
+    const { data, error } = await supabase
+      .from("conversations")
+      .update({ status })
+      .eq("id", conversationId)
+      .select(
+        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+      )
+      .single();
+    if (error) throw error;
+    let assignee = null as { id: string; name: string } | null;
+    if (data.assigned_to) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("id", data.assigned_to)
+        .maybeSingle();
+      assignee = prof ?? null;
+    }
+    return mapConversation({ ...data, assignee });
+  },
+
+  async setConversationPriority(
+    conversationId: string,
+    priority: "LOW" | "NORMAL" | "HIGH" | "URGENT",
+  ): Promise<Conversation> {
+    const { data, error } = await supabase
+      .from("conversations")
+      .update({ priority })
+      .eq("id", conversationId)
+      .select(
+        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+      )
+      .single();
+    if (error) throw error;
+    let assignee = null as { id: string; name: string } | null;
+    if (data.assigned_to) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("id", data.assigned_to)
+        .maybeSingle();
+      assignee = prof ?? null;
+    }
+    return mapConversation({ ...data, assignee });
+  },
+
+  async deleteConversation(conversationId: string): Promise<{ ok: true }> {
+    const { error } = await supabase
+      .from("conversations")
+      .delete()
+      .eq("id", conversationId);
+    if (error) throw error;
+    return { ok: true };
   },
 
   // ---------- Auth ----------
@@ -339,7 +411,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, last_message, last_message_at, status, assigned_to")
+    .select("id, type, name, last_message, last_message_at, status, priority, assigned_to")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
