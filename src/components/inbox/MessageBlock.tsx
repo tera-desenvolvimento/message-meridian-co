@@ -64,7 +64,7 @@ export function MessageBlock({ message }: { message: Message }) {
       </header>
 
       <div className="pl-8 text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
-        {message.content}
+        {displayContent}
       </div>
     </article>
   );
