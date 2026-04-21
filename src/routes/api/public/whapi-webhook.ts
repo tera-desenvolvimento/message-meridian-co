@@ -399,6 +399,17 @@ async function upsertConversation(params: {
   return created.id;
 }
 
+function shouldReplaceGroupName(current: string | null | undefined): boolean {
+  if (!current) return true;
+  const trimmed = current.trim();
+  if (!trimmed) return true;
+  if (trimmed.toLowerCase() === "grupo") return true;
+  if (trimmed.toLowerCase() === "contato") return true;
+  // Apenas dígitos / placeholder de telefone
+  if (/^\+?\d[\d\s-]*$/.test(trimmed)) return true;
+  return false;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
