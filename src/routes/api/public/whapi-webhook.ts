@@ -105,6 +105,9 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             });
 
             let workspace = await findWorkspaceByNumber(accountDigits);
+            if (!workspace && providedSecret) {
+              workspace = await findWorkspaceByWebhookSecret(providedSecret);
+            }
             if (!workspace) {
               workspace = await findSingleEnabledWhapiWorkspace();
             }
@@ -256,6 +259,26 @@ async function findSingleEnabledWhapiWorkspace() {
   }
   console.log("🚫 Fallback Whapi não aplicável. Workspaces ativos:", workspaceIds.length);
   return null;
+}
+
+async function findWorkspaceByWebhookSecret(secret: string) {
+  const { data: integ, error } = await supabaseAdmin
+    .from("workspace_integrations")
+    .select("workspace_id")
+    .eq("provider", "whapi")
+    .eq("enabled", true)
+    .eq("webhook_secret", secret)
+    .maybeSingle();
+  if (error) console.log("⚠️ Erro buscando workspace pelo secret:", error);
+  if (!integ?.workspace_id) return null;
+  const { data: workspace, error: wsErr } = await supabaseAdmin
+    .from("workspaces")
+    .select("id, name, whatsapp_number")
+    .eq("id", integ.workspace_id)
+    .maybeSingle();
+  if (wsErr) console.log("⚠️ Erro carregando workspace por secret:", wsErr);
+  if (workspace) console.log("🎯 Match workspace por secret do webhook:", workspace.id);
+  return workspace ?? null;
 }
 
 async function findWorkspaceByNumber(digits: string) {
