@@ -226,6 +226,30 @@ function digitsOnly(v: unknown): string {
   return String(v).replace(/\D+/g, "");
 }
 
+function firstPhoneCandidate(values: unknown[]): { raw: unknown; digits: string } | null {
+  for (const raw of values) {
+    const digits = digitsOnly(raw);
+    if (digits.length >= 8) return { raw, digits };
+  }
+  return null;
+}
+
+async function findSingleEnabledWhapiWorkspace() {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_integrations")
+    .select("workspace_id, workspaces(id, name, whatsapp_number)")
+    .eq("provider", "whapi")
+    .eq("enabled", true);
+  if (error) console.log("⚠️ Erro buscando fallback de integração:", error);
+  const workspaces = (data ?? []).map((row: any) => row.workspaces).filter(Boolean);
+  if (workspaces.length === 1) {
+    console.log("🎯 Fallback: único workspace Whapi ativo encontrado:", workspaces[0].id);
+    return workspaces[0];
+  }
+  console.log("🚫 Fallback Whapi não aplicável. Workspaces ativos:", workspaces.length);
+  return null;
+}
+
 async function findWorkspaceByNumber(digits: string) {
   if (!digits) {
     console.log("⚠️ findWorkspaceByNumber: digits vazio");
