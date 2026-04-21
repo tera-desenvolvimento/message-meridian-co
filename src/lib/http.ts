@@ -483,7 +483,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, last_message, last_message_at, status, priority, assigned_to")
+    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
