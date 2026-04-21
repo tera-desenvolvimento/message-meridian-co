@@ -80,6 +80,8 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             }
 
             const fromMe: boolean = Boolean(msg?.from_me);
+            const isGroup = String(chatId).includes("@g.us");
+
             const accountCandidate = firstPhoneCandidate([
               payload?.account_phone,
               payload?.phone_number,
@@ -94,14 +96,26 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             ]);
             const accountNumberRaw = accountCandidate?.raw || payload?.channel_id;
             const accountDigits = accountCandidate?.digits ?? "";
-            const contactDigits = digitsOnly(fromMe ? chatId : msg?.from || chatId);
-            const isGroup = String(chatId).includes("@g.us");
+
+            // Identificar telefone do remetente real:
+            // - Grupo: msg.author (quem enviou no grupo) ou msg.from quando from_me
+            // - Privado: msg.from (ou chat_id quando from_me)
+            let senderRaw: unknown;
+            if (fromMe) {
+              senderRaw = accountCandidate?.raw || msg?.from || chatId;
+            } else if (isGroup) {
+              senderRaw = msg?.author || msg?.from_phone || msg?.from;
+            } else {
+              senderRaw = msg?.from || chatId;
+            }
+            const contactDigits = digitsOnly(senderRaw);
 
             console.log("🔍 Buscando workspace pelo número...", {
               accountNumberRaw,
               accountDigits,
               contactDigits,
               isGroup,
+              senderRaw,
             });
 
             let workspace = await findWorkspaceByNumber(accountDigits);
