@@ -1,15 +1,29 @@
 import { useMemo, useState } from "react";
-import { Search, User, Users, Inbox, Filter } from "lucide-react";
+import { Search, User, Users, Inbox, Filter, Plus, Loader2 } from "lucide-react";
 import type { Conversation, ConversationStatus } from "@/lib/types";
 import { formatRelative } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/http";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Props {
   conversations: Conversation[];
   loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onConversationCreated?: (id: string) => void;
 }
 
 const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
