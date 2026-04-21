@@ -1,50 +1,74 @@
 
 
-## Problema
+## Gerenciamento de Equipe — Edição, Status e Perfil Próprio
 
-Ao enviar mensagem pelo painel, ela é apenas inserida na tabela `messages` (gravada localmente), mas **nunca é enviada para a API do Whapi**. Por isso o destinatário no WhatsApp não recebe nada.
+### O que vai mudar
 
-Hoje em `src/lib/http.ts → sendMessage`:
-```ts
-await supabase.from("messages").insert({ conversation_id, content, from_me: true, ... })
+**1. Admins poderão, na tela `/team`:**
+- Editar o **nome** de qualquer membro do workspace.
+- **Ativar/desativar** um membro (desativado não consegue acessar a inbox nem enviar mensagens, mas o histórico e a conta continuam preservados — diferente de "Remover", que apaga o vínculo).
+- Alterar o **papel** (ADMIN/AGENT) — já existe, será mantido.
+- Remover o membro — já existe, será mantido.
+
+**2. Agentes (não-admins) poderão:**
+- Editar o **próprio nome**.
+- Alterar a **própria senha**.
+- Ver os próprios dados (e-mail, papel, data de entrada) em modo somente leitura.
+
+**3. UX nova na tela `/team`:**
+- Nova coluna **"Ações"** com botão **Editar** (ícone lápis) ao lado de **Remover** — abre um Dialog para alterar nome/status do membro.
+- Linha do próprio usuário ganha botão **"Editar meu perfil"** que abre o mesmo Dialog em modo "self" (sem campo de status, sem campo de papel, com seção extra de troca de senha).
+- Membros desativados aparecem com badge cinza "Desativado" e linha esmaecida.
+
+### Mudanças técnicas
+
+**Banco (migration nova):**
+- Adicionar coluna `memberships.active boolean NOT NULL DEFAULT true`.
+  - Por que em `memberships` e não em `profiles`: o status é por-workspace (um usuário pode estar ativo num workspace e desativado em outro no futuro), e desativar pelo membership não destrói a conta auth.
+- Adicionar coluna `profiles.email text` (sincronizada via trigger `handle_new_user` atualizada) para que o admin veja o e-mail de cada membro no painel — hoje a coluna `email` em `TeamMember` vem vazia.
+- Atualizar trigger `handle_new_user` para preencher `email` no profile.
+- Backfill: rodar `UPDATE profiles SET email = au.email FROM auth.users au WHERE profiles.id = au.id`.
+- Adicionar política RLS de **gate de acesso por `active`**: criar função `is_active_member(_workspace_id uuid)` (SECURITY DEFINER) que retorna true só se o usuário for membro **e** `active = true`. Substituir as policies de `conversations` e `messages` que hoje usam `is_member_of` para usar `is_active_member` — assim um agente desativado fica bloqueado de fato no banco, não só na UI.
+
+**Tipos (`src/lib/types.ts`):**
+- Adicionar `active: boolean` em `TeamMember`.
+- Status passa a derivar de `active` (`ACTIVE` se true, `DISABLED` se false).
+
+**API (`src/lib/http.ts`):**
+- `updateMemberActive(userId, active)` — admin atualiza `memberships.active`.
+- `updateMemberName(userId, name)` — admin atualiza `profiles.name` (precisa de policy nova: admin do workspace pode atualizar profile de membros do workspace).
+- `updateOwnProfile({ name })` — agente atualiza o próprio `profiles.name` (RLS já permite).
+- `updateOwnPassword(newPassword)` — chama `supabase.auth.updateUser({ password })`.
+- Atualizar `manualListUsers` para trazer `active` e `email` do profile.
+
+**RLS adicional em `profiles`:**
+- Nova policy "Admins can update workspace member profiles" — `is_admin_of` cruzado com membership do alvo.
+
+**UI:**
+- `src/routes/team.tsx`: nova coluna Ações com botão Editar; novo `EditMemberDialog` (usa `Dialog` do shadcn) com campos nome + toggle ativo + select de papel; novo `EditSelfDialog` com nome + senha atual/nova + confirmação.
+- `ConversationList`/`ChatArea`: o select de "Assign" filtra `active = true` para não atribuir conversa a alguém desativado.
+
+### Fluxo do usuário
+
+```text
+Admin
+ └─ /team
+     ├─ Vê lista de membros com badges Ativo/Desativado
+     ├─ Clica "Editar" em qualquer linha
+     │   └─ Dialog: nome + papel + toggle Ativo
+     └─ Clica "Editar meu perfil" na própria linha
+         └─ Dialog self: nome + nova senha
+
+Agente
+ └─ /team
+     ├─ Vê lista (somente leitura)
+     └─ Clica "Editar meu perfil"
+         └─ Dialog self: nome + nova senha
 ```
-Não há nenhuma chamada para `https://gate.whapi.cloud/messages/text`.
 
-## Solução
+### Fora do escopo
 
-Criar uma rota **server-side** (`/api/whapi/send`) que:
-1. Autentica o usuário e valida que ele é membro do workspace da conversa (RLS via `requireSupabaseAuth`).
-2. Busca o `external_id` (chat_id do WhatsApp) da conversa e o `token`/`api_url` do `workspace_integrations` (com `supabaseAdmin`, pois `token` é admin-only por RLS).
-3. Faz `POST {api_url}/messages/text` com `Authorization: Bearer {token}` enviando `{ to: chatId, body: content }`.
-4. Em sucesso: insere a mensagem em `messages` com `external_id` retornado pelo Whapi, `from_me: true` (dedupe contra o webhook que ecoa a mensagem enviada).
-5. Em falha: retorna erro estruturado com status do Whapi e a mensagem do erro para o frontend exibir.
-
-Atualizar `api.sendMessage` no frontend para chamar `fetch("/api/whapi/send", ...)` em vez de fazer insert direto.
-
-## Arquivos
-
-**Criar `src/routes/api/whapi/send.ts`** — rota POST autenticada:
-- Body: `{ conversationId, content }` (validado com Zod: `content` 1–4096 chars).
-- Lê conversa via cliente autenticado (RLS garante que usuário é membro).
-- Lê integração com `supabaseAdmin` (para acessar `token`).
-- Verifica `enabled = true` e `token` presente; senão retorna 400 com mensagem clara.
-- Verifica `external_id` da conversa; senão retorna 400 ("conversa sem chat_id externo").
-- Faz `fetch` para `${api_url}/messages/text` com body `{ to, body }`. Para grupos (`@g.us`), mesmo endpoint funciona.
-- Trata erros de rede/HTTP do Whapi e loga (status, corpo) sem expor token.
-- Insere em `messages` (`from_me: true`, `sender_name: profile.name`, `external_id` do Whapi, `sender_phone` se disponível) e atualiza `last_message`/`last_message_at` na conversa.
-- Retorna `{ ok: true, message: {...} }` mapeado no formato `Message`.
-
-**Editar `src/lib/http.ts`**:
-- Substituir `api.sendMessage` para fazer `fetch("/api/whapi/send", { method: "POST", body: JSON.stringify({ conversationId, content }) })`, propagando cookie de auth automaticamente (mesmo origin).
-- Tratar resposta de erro: `if (!res.ok) throw new Error(json.error)` para que o `ChatArea` exiba toast.
-
-**Webhook `whapi-webhook.ts`**: nenhuma mudança. O dedupe por `external_id` já existente garante que a mensagem retornada pelo Whapi (eco do envio com `from_me=true`) não seja inserida em duplicata.
-
-## Detalhes técnicos
-
-- **Endpoint Whapi**: `POST https://gate.whapi.cloud/messages/text` com header `Authorization: Bearer <token>` e body `{ "to": "<chat_id>", "body": "<text>" }`. Resposta esperada: `{ sent: true, message: { id, chat_id, ... } }`.
-- **Por que server-side**: o `token` do Whapi é segredo por workspace, e a RLS de `workspace_integrations` é admin-only — não dá para ler o token do browser. Além disso, evitamos CORS contra `gate.whapi.cloud`.
-- **Auth**: usar middleware `requireSupabaseAuth` para garantir que `userId` pertence ao workspace da conversa antes de buscar token (defesa em profundidade contra IDOR).
-- **Dedupe**: ao inserir com `external_id` retornado pelo Whapi, qualquer eco posterior do webhook bate na unique constraint `messages_external_id_unique` e é silenciosamente ignorado (código `23505` já tratado no webhook).
-- **Realtime**: o `ChatArea` que faz polling pegará a mensagem inserida automaticamente; nenhum trabalho extra de UI necessário.
+- Convite por e-mail real (continua exigindo edge function com service-role; segue como follow-up).
+- Avatar/foto de perfil.
+- Auditoria de quem alterou o quê.
 
