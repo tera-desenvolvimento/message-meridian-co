@@ -171,7 +171,7 @@ export const api = {
       .update({ assigned_to: uid, status: "OPEN" })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -189,7 +189,7 @@ export const api = {
       .update({ assigned_to: null })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -205,7 +205,7 @@ export const api = {
       .update({ status })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -230,7 +230,7 @@ export const api = {
       .update({ priority })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
