@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { Search, UserCheck } from "lucide-react";
-import type { Conversation } from "@/lib/types";
+import { Search, User, Users, Inbox, Filter } from "lucide-react";
+import type { Conversation, ConversationStatus } from "@/lib/types";
 import { formatRelative } from "@/lib/format";
-import { Avatar } from "./Avatar";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge, TypeTag } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,74 +12,167 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
+const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
+  { id: "ALL", label: "All" },
+  { id: "OPEN", label: "Open" },
+  { id: "PENDING", label: "Pending" },
+  { id: "CLOSED", label: "Closed" },
+];
+
+// Deterministic priority derived from id — placeholder until backend provides it
+function priorityFor(id: string): "low" | "normal" | "high" {
+  const sum = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return (["low", "normal", "high"] as const)[sum % 3];
+}
+
+const priorityBar: Record<"low" | "normal" | "high", string> = {
+  low: "bg-border-strong",
+  normal: "bg-info",
+  high: "bg-destructive",
+};
+
 export function ConversationList({ conversations, loading, selectedId, onSelect }: Props) {
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q),
-    );
-  }, [conversations, query]);
+    return conversations.filter((c) => {
+      if (filter !== "ALL" && c.status !== filter) return false;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
+    });
+  }, [conversations, query, filter]);
+
+  const counts = useMemo(() => {
+    return {
+      ALL: conversations.length,
+      OPEN: conversations.filter((c) => c.status === "OPEN").length,
+      PENDING: conversations.filter((c) => c.status === "PENDING").length,
+      CLOSED: conversations.filter((c) => c.status === "CLOSED").length,
+    };
+  }, [conversations]);
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-border bg-card md:w-[340px] md:border-r lg:w-[380px]">
-      <div className="shrink-0 border-b border-border p-4">
-        <h1 className="mb-3 text-lg font-semibold tracking-tight">Caixa de entrada</h1>
+    <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[360px] md:border-r md:border-border lg:w-[400px]">
+      {/* Header */}
+      <div className="shrink-0 border-b border-border px-4 pt-4 pb-3">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary">
+            <Inbox className="h-4 w-4" />
+          </div>
+          <h1 className="text-sm font-semibold tracking-tight">Inbox</h1>
+          <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            {counts.ALL} tickets
+          </span>
+        </div>
+
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nome ou telefone"
-            className="w-full rounded-lg border border-border bg-input/60 py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Search tickets, contacts…"
+            className="w-full rounded-md border border-border bg-input/60 py-1.5 pl-8 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
+        </div>
+
+        {/* Filter tabs */}
+        <div className="mt-3 flex items-center gap-1">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={cn(
+                "rounded px-2 py-1 text-[11px] font-medium uppercase tracking-wider transition",
+                filter === f.id
+                  ? "bg-surface-2 text-foreground"
+                  : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+              )}
+            >
+              {f.label}
+              <span className="ml-1 font-mono text-[10px] opacity-60">{counts[f.id]}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="scrollbar-thin flex-1 overflow-y-auto">
+      {/* List */}
+      <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
         {loading && conversations.length === 0 ? (
           <ListSkeleton />
         ) : filtered.length === 0 ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">Nenhuma conversa encontrada.</div>
+          <div className="px-6 py-12 text-center text-[13px] text-muted-foreground">
+            No tickets match your filters.
+          </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {filtered.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(c.id)}
-                  className={cn(
-                    "flex w-full items-start gap-3 px-3 py-3 text-left transition hover:bg-accent/50",
-                    selectedId === c.id && "bg-accent",
-                  )}
-                >
-                  <Avatar name={c.name} isGroup={c.type === "GROUP"} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="truncate font-medium text-foreground">{c.name}</span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {formatRelative(c.lastMessageAt)}
-                      </span>
-                    </div>
-                    <p className="truncate text-sm text-muted-foreground">{c.lastMessage}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {c.type === "GROUP" ? "Grupo" : "Privado"}
-                      </span>
-                      <StatusBadge status={c.status} />
-                      {c.assignedTo && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                          <UserCheck className="h-3 w-3" />
-                          {c.assignedTo.name}
-                        </span>
+          <ul>
+            {filtered.map((c) => {
+              const prio = priorityFor(c.id);
+              const active = selectedId === c.id;
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(c.id)}
+                    className={cn(
+                      "group relative flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition",
+                      active ? "bg-surface-2" : "hover:bg-surface-2/60",
+                    )}
+                  >
+                    {/* Active indicator + priority bar */}
+                    <span
+                      className={cn(
+                        "absolute left-0 top-2 bottom-2 w-0.5 rounded-r",
+                        active ? "bg-primary" : priorityBar[prio],
                       )}
+                    />
+
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground">
+                      {c.type === "GROUP" ? <Users className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
                     </div>
-                  </div>
-                </button>
-              </li>
-            ))}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            #{c.id.toUpperCase()}
+                          </span>
+                          <span className="truncate text-[13px] font-semibold text-foreground">
+                            {c.name}
+                          </span>
+                        </div>
+                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {formatRelative(c.lastMessageAt)}
+                        </span>
+                      </div>
+
+                      <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+                        {c.lastMessage}
+                      </p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={c.status} />
+                        <TypeTag type={c.type} />
+                        <span className="ml-auto truncate text-[11px] text-muted-foreground">
+                          {c.assignedTo ? (
+                            <>
+                              <span className="text-muted-foreground/70">→ </span>
+                              <span className="font-medium text-foreground/80">
+                                {c.assignedTo.name}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="italic text-muted-foreground/70">Unassigned</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -90,13 +182,14 @@ export function ConversationList({ conversations, loading, selectedId, onSelect 
 
 function ListSkeleton() {
   return (
-    <ul className="divide-y divide-border">
+    <ul>
       {Array.from({ length: 6 }).map((_, i) => (
-        <li key={i} className="flex items-start gap-3 px-3 py-3">
-          <div className="h-11 w-11 animate-pulse rounded-full bg-muted" />
+        <li key={i} className="flex items-start gap-3 border-b border-border px-4 py-3">
+          <div className="h-7 w-7 animate-pulse rounded-md bg-muted" />
           <div className="flex-1 space-y-2">
-            <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-full animate-pulse rounded bg-muted" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
           </div>
         </li>
       ))}
