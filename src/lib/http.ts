@@ -11,6 +11,7 @@ import type {
   AuthResponse,
   AuthUser,
   Conversation,
+  Invitation,
   Message,
   TeamMember,
   UserRole,
@@ -362,13 +363,41 @@ export const api = {
     return manualListUsers(wsId);
   },
 
-  async inviteUser(email: string, _role: UserRole): Promise<TeamMember> {
-    // True invitations require a server function with the service-role key.
-    // For now we surface a clear message so admins know what's needed.
-    void _role;
-    throw new Error(
-      `Convites por e-mail exigem uma função no servidor. Peça ao usuário (${email}) para criar uma conta e depois adicione-o ao workspace.`,
-    );
+  async createInvitation(email: string | null, role: UserRole): Promise<Invitation> {
+    const wsId = await requireWorkspaceId();
+    const uid = await getSessionUserId();
+    const token = generateInviteToken();
+    const { data, error } = await supabase
+      .from("invitations")
+      .insert({
+        workspace_id: wsId,
+        email: email && email.trim() ? email.trim().toLowerCase() : null,
+        role,
+        token,
+        created_by: uid,
+      })
+      .select("id, email, role, token, expires_at, accepted_at, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return mapInvitation(data);
+  },
+
+  async listInvitations(): Promise<Invitation[]> {
+    const wsId = await requireWorkspaceId();
+    const { data, error } = await supabase
+      .from("invitations")
+      .select("id, email, role, token, expires_at, accepted_at, created_at")
+      .eq("workspace_id", wsId)
+      .is("accepted_at", null)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapInvitation);
+  },
+
+  async revokeInvitation(id: string): Promise<{ ok: true }> {
+    const { error } = await supabase.from("invitations").delete().eq("id", id);
+    if (error) throw error;
+    return { ok: true };
   },
 
   async updateUserRole(userId: string, role: UserRole): Promise<TeamMember> {

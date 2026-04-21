@@ -61,3 +61,14 @@ export interface AuthResponse {
   token: string;
   user: AuthUser;
 }
+
+export interface Invitation {
+  id: string;
+  email: string | null;
+  role: UserRole;
+  token: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  createdAt: string;
+  inviteUrl: string;
+}
