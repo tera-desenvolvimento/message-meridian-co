@@ -103,7 +103,7 @@ export function ChatArea({
     if (members.length > 0) return;
     try {
       const list = await api.listUsers();
-      setMembers(list);
+      setMembers(list.filter((m) => m.active));
     } catch (e) {
       console.error("Failed to load members", e);
     }
