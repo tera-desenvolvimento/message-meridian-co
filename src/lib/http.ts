@@ -579,6 +579,34 @@ async function manualListUsers(wsId: string): Promise<TeamMember[]> {
   });
 }
 
+function generateInviteToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function mapInvitation(row: {
+  id: string;
+  email: string | null;
+  role: string;
+  token: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+}): Invitation {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return {
+    id: row.id,
+    email: row.email,
+    role: row.role as UserRole,
+    token: row.token,
+    expiresAt: row.expires_at,
+    acceptedAt: row.accepted_at,
+    createdAt: row.created_at,
+    inviteUrl: `${origin}/accept-invite?token=${row.token}`,
+  };
+}
+
 // Kept for backward compatibility with old code that imported these.
 export function setTokenProvider(_fn: () => string | null) {
   void _fn;
