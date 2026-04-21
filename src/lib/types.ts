@@ -11,6 +11,7 @@ export interface Conversation {
   id: string;
   type: ConversationType;
   name: string;
+  externalId: string | null;
   lastMessage: string;
   lastMessageAt: string;
   status: ConversationStatus;
