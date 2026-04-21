@@ -2,11 +2,6 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
-import { installMockApi } from "@/lib/mock-api";
-
-// Install the mock API once on the client. Remove this line and point
-// src/lib/http.ts BASE_URL to your real backend to go live.
-if (typeof window !== "undefined") installMockApi();
 
 function NotFoundComponent() {
   return (

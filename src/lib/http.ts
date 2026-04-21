@@ -1,11 +1,12 @@
 /**
- * Single source of truth for HTTP calls. Swap BASE_URL with the real API origin
- * (and remove installMockApi from the entry) to go to production.
+ * Supabase-backed API. Keeps the same `api` shape the UI was already using
+ * (so components don't need to change), but every call now hits Supabase.
  *
- * Auth: a token provider is installed at boot by AuthProvider. Every request
- * automatically gets `Authorization: Bearer <token>`. A 401 triggers the
- * registered onUnauthorized handler so the app can redirect to /login.
+ * Auth is handled by Supabase sessions (see auth-context.tsx). RLS in the
+ * database enforces per-workspace isolation — the frontend never trusts
+ * its own filters.
  */
+import { supabase } from "@/integrations/supabase/client";
 import type {
   AuthResponse,
   AuthUser,
@@ -16,97 +17,365 @@ import type {
   Workspace,
 } from "./types";
 
-const BASE_URL = "https://mock.api";
+// ----- helpers -----
 
-let tokenProvider: () => string | null = () => null;
-let onUnauthorized: () => void = () => {};
-
-export function setTokenProvider(fn: () => string | null) {
-  tokenProvider = fn;
-}
-export function setUnauthorizedHandler(fn: () => void) {
-  onUnauthorized = fn;
+async function getSessionUserId(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const uid = data.session?.user.id;
+  if (!uid) throw new Error("Not authenticated");
+  return uid;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = tokenProvider();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers || {}),
-    },
-  });
-  if (res.status === 401) {
-    onUnauthorized();
-    throw new Error("Unauthorized");
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    let msg = res.statusText;
-    try {
-      const parsed = JSON.parse(text);
-      msg = parsed.error || msg;
-    } catch {
-      if (text) msg = text;
-    }
-    throw new Error(msg);
-  }
-  return res.json() as Promise<T>;
+async function getCurrentMembership() {
+  const uid = await getSessionUserId();
+  const { data, error } = await supabase
+    .from("memberships")
+    .select("id, workspace_id, role")
+    .eq("user_id", uid)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data; // may be null (no workspace yet)
 }
+
+async function requireWorkspaceId(): Promise<string> {
+  const m = await getCurrentMembership();
+  if (!m) throw new Error("No workspace");
+  return m.workspace_id;
+}
+
+function mapConversation(row: {
+  id: string;
+  type: "PRIVATE" | "GROUP";
+  name: string;
+  last_message: string;
+  last_message_at: string;
+  status: "OPEN" | "PENDING" | "CLOSED";
+  assigned_to: string | null;
+  assignee?: { id: string; name: string } | null;
+}): Conversation {
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    lastMessage: row.last_message,
+    lastMessageAt: row.last_message_at,
+    status: row.status,
+    assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
+  };
+}
+
+function mapMessage(row: {
+  id: string;
+  conversation_id: string;
+  content: string;
+  from_me: boolean;
+  sender_name: string;
+  created_at: string;
+}): Message {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    content: row.content,
+    fromMe: row.from_me,
+    senderName: row.sender_name,
+    createdAt: row.created_at,
+    type: "text",
+  };
+}
+
+// ----- API surface -----
 
 export const api = {
-  // Inbox
-  listConversations: () => request<Conversation[]>("/conversations"),
-  listMessages: (conversationId: string) =>
-    request<Message[]>(`/messages?conversationId=${encodeURIComponent(conversationId)}`),
-  sendMessage: (conversationId: string, content: string) =>
-    request<Message>("/messages/send", {
-      method: "POST",
-      body: JSON.stringify({ conversationId, content }),
-    }),
-  assignConversation: (conversationId: string) =>
-    request<Conversation>("/conversations/assign", {
-      method: "POST",
-      body: JSON.stringify({ conversationId }),
-    }),
+  // ---------- Inbox ----------
+  async listConversations(): Promise<Conversation[]> {
+    const wsId = await requireWorkspaceId();
+    const { data, error } = await supabase
+      .from("conversations")
+      .select(
+        "id, type, name, last_message, last_message_at, status, assigned_to, assignee:profiles!conversations_assigned_to_fkey(id, name)",
+      )
+      .eq("workspace_id", wsId)
+      .order("last_message_at", { ascending: false });
+    if (error) {
+      // The FK alias may not exist; fall back to a manual join.
+      return manualListConversations(wsId);
+    }
+    return (data ?? []).map((r) => mapConversation(r as never));
+  },
 
-  // Auth
-  login: (email: string, password: string) =>
-    request<AuthResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-  register: (name: string, email: string, password: string) =>
-    request<AuthResponse>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    }),
-  me: () => request<AuthUser>("/me"),
+  async listMessages(conversationId: string): Promise<Message[]> {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, conversation_id, content, from_me, sender_name, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapMessage);
+  },
 
-  // Workspace
-  getWorkspace: () => request<Workspace | null>("/workspace"),
-  createWorkspace: (name: string) =>
-    request<Workspace>("/workspace", {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    }),
+  async sendMessage(conversationId: string, content: string): Promise<Message> {
+    const uid = await getSessionUserId();
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", uid)
+      .maybeSingle();
+    const senderName = prof?.name || "Agent";
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        content,
+        from_me: true,
+        sender_name: senderName,
+      })
+      .select("id, conversation_id, content, from_me, sender_name, created_at")
+      .single();
+    if (error) throw error;
+    return mapMessage(data);
+  },
 
-  // Team
-  listUsers: () => request<TeamMember[]>("/users"),
-  inviteUser: (email: string, role: UserRole) =>
-    request<TeamMember>("/invite-user", {
-      method: "POST",
-      body: JSON.stringify({ email, role }),
-    }),
-  updateUserRole: (userId: string, role: UserRole) =>
-    request<TeamMember>("/users/role", {
-      method: "PATCH",
-      body: JSON.stringify({ userId, role }),
-    }),
-  removeUser: (userId: string) =>
-    request<{ ok: true }>(`/users/${encodeURIComponent(userId)}`, {
-      method: "DELETE",
-    }),
+  async assignConversation(conversationId: string): Promise<Conversation> {
+    const uid = await getSessionUserId();
+    const { data, error } = await supabase
+      .from("conversations")
+      .update({ assigned_to: uid, status: "OPEN" })
+      .eq("id", conversationId)
+      .select(
+        "id, type, name, last_message, last_message_at, status, assigned_to",
+      )
+      .single();
+    if (error) throw error;
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .eq("id", uid)
+      .maybeSingle();
+    return mapConversation({ ...data, assignee: prof ?? null });
+  },
+
+  // ---------- Auth ----------
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    if (!data.session) throw new Error("No session returned");
+    const user = await api.me();
+    return { token: data.session.access_token, user };
+  },
+
+  async register(name: string, email: string, password: string): Promise<AuthResponse> {
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: redirectTo,
+      },
+    });
+    if (error) throw new Error(error.message);
+    if (!data.session) {
+      // Email confirmation likely required; we still return a placeholder.
+      throw new Error(
+        "Conta criada. Verifique seu e-mail para confirmar (ou desative confirmação no Cloud).",
+      );
+    }
+    const user = await api.me();
+    return { token: data.session.access_token, user };
+  },
+
+  async me(): Promise<AuthUser> {
+    const { data: sess } = await supabase.auth.getSession();
+    const sUser = sess.session?.user;
+    if (!sUser) throw new Error("Not authenticated");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", sUser.id)
+      .maybeSingle();
+
+    const membership = await getCurrentMembership();
+
+    return {
+      id: sUser.id,
+      email: sUser.email ?? "",
+      name: profile?.name || sUser.email?.split("@")[0] || "User",
+      role: (membership?.role as UserRole) ?? "AGENT",
+      workspaceId: membership?.workspace_id ?? null,
+    };
+  },
+
+  // ---------- Workspace ----------
+  async getWorkspace(): Promise<Workspace | null> {
+    const m = await getCurrentMembership();
+    if (!m) return null;
+    const { data, error } = await supabase
+      .from("workspaces")
+      .select("id, name, created_at")
+      .eq("id", m.workspace_id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return { id: data.id, name: data.name, createdAt: data.created_at };
+  },
+
+  async createWorkspace(name: string): Promise<Workspace> {
+    const uid = await getSessionUserId();
+    const { data: ws, error } = await supabase
+      .from("workspaces")
+      .insert({ name })
+      .select("id, name, created_at")
+      .single();
+    if (error) throw error;
+
+    const { error: mErr } = await supabase
+      .from("memberships")
+      .insert({ user_id: uid, workspace_id: ws.id, role: "ADMIN" });
+    if (mErr) throw mErr;
+
+    return { id: ws.id, name: ws.name, createdAt: ws.created_at };
+  },
+
+  // ---------- Team ----------
+  async listUsers(): Promise<TeamMember[]> {
+    const wsId = await requireWorkspaceId();
+    const { data, error } = await supabase
+      .from("memberships")
+      .select("id, role, created_at, user_id, profile:profiles!memberships_user_id_fkey(id, name)")
+      .eq("workspace_id", wsId);
+    if (error) {
+      // fallback: fetch memberships then profiles separately
+      return manualListUsers(wsId);
+    }
+    return (data ?? []).map((row: never) => {
+      const r = row as {
+        user_id: string;
+        role: UserRole;
+        created_at: string;
+        profile: { id: string; name: string } | null;
+      };
+      return {
+        id: r.user_id,
+        name: r.profile?.name || "—",
+        email: "",
+        role: r.role,
+        status: "ACTIVE" as const,
+        joinedAt: r.created_at,
+      };
+    });
+  },
+
+  async inviteUser(email: string, _role: UserRole): Promise<TeamMember> {
+    // True invitations require a server function with the service-role key.
+    // For now we surface a clear message so admins know what's needed.
+    void _role;
+    throw new Error(
+      `Convites por e-mail exigem uma função no servidor. Peça ao usuário (${email}) para criar uma conta e depois adicione-o ao workspace.`,
+    );
+  },
+
+  async updateUserRole(userId: string, role: UserRole): Promise<TeamMember> {
+    const wsId = await requireWorkspaceId();
+    const { data, error } = await supabase
+      .from("memberships")
+      .update({ role })
+      .eq("workspace_id", wsId)
+      .eq("user_id", userId)
+      .select("user_id, role, created_at")
+      .single();
+    if (error) throw error;
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", userId)
+      .maybeSingle();
+    return {
+      id: data.user_id,
+      name: prof?.name || "—",
+      email: "",
+      role: data.role as UserRole,
+      status: "ACTIVE",
+      joinedAt: data.created_at,
+    };
+  },
+
+  async removeUser(userId: string): Promise<{ ok: true }> {
+    const wsId = await requireWorkspaceId();
+    const { error } = await supabase
+      .from("memberships")
+      .delete()
+      .eq("workspace_id", wsId)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return { ok: true };
+  },
 };
+
+// ---- fallbacks when PostgREST relationship hints fail ----
+
+async function manualListConversations(wsId: string): Promise<Conversation[]> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("id, type, name, last_message, last_message_at, status, assigned_to")
+    .eq("workspace_id", wsId)
+    .order("last_message_at", { ascending: false });
+  if (error) throw error;
+  const rows = data ?? [];
+  const assigneeIds = Array.from(
+    new Set(rows.map((r) => r.assigned_to).filter((x): x is string => !!x)),
+  );
+  let profileMap = new Map<string, string>();
+  if (assigneeIds.length) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", assigneeIds);
+    profileMap = new Map((profs ?? []).map((p) => [p.id, p.name]));
+  }
+  return rows.map((r) =>
+    mapConversation({
+      ...r,
+      assignee: r.assigned_to
+        ? { id: r.assigned_to, name: profileMap.get(r.assigned_to) ?? "—" }
+        : null,
+    }),
+  );
+}
+
+async function manualListUsers(wsId: string): Promise<TeamMember[]> {
+  const { data, error } = await supabase
+    .from("memberships")
+    .select("user_id, role, created_at")
+    .eq("workspace_id", wsId);
+  if (error) throw error;
+  const rows = data ?? [];
+  const ids = rows.map((r) => r.user_id);
+  let names = new Map<string, string>();
+  if (ids.length) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", ids);
+    names = new Map((profs ?? []).map((p) => [p.id, p.name]));
+  }
+  return rows.map((r) => ({
+    id: r.user_id,
+    name: names.get(r.user_id) || "—",
+    email: "",
+    role: r.role as UserRole,
+    status: "ACTIVE" as const,
+    joinedAt: r.created_at,
+  }));
+}
+
+// Kept for backward compatibility with old code that imported these.
+export function setTokenProvider(_fn: () => string | null) {
+  void _fn;
+}
+export function setUnauthorizedHandler(_fn: () => void) {
+  void _fn;
+}
