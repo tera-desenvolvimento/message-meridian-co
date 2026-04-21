@@ -169,15 +169,38 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
   const [role, setRole] = useState<UserRole>("AGENT");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [pending, setPending] = useState<import("@/lib/types").Invitation[]>([]);
+
+  const refreshPending = useCallback(async () => {
+    try {
+      const list = await api.listInvitations();
+      setPending(list);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshPending();
+  }, [refreshPending]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setFeedback(null);
+    setGeneratedLink(null);
+    setCopied(false);
     try {
-      await api.inviteUser(email.trim(), role);
-      setFeedback({ type: "ok", msg: `Convite enviado para ${email}` });
+      const inv = await api.createInvitation(email.trim() || null, role);
+      setGeneratedLink(inv.inviteUrl);
+      setFeedback({
+        type: "ok",
+        msg: "Link de convite gerado! Copie e envie ao novo membro.",
+      });
       setEmail("");
+      await refreshPending();
       onInvited();
     } catch (err) {
       setFeedback({ type: "err", msg: err instanceof Error ? err.message : "Falha" });
@@ -186,51 +209,138 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
     }
   }
 
+  async function copyLink(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function revoke(id: string) {
+    if (!confirm("Cancelar este convite? O link deixará de funcionar.")) return;
+    try {
+      await api.revokeInvitation(id);
+      await refreshPending();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
-    <form
-      onSubmit={onSubmit}
-      className="mb-6 rounded-md border border-border bg-surface p-4"
-    >
-      <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Convidar usuário
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input
-          type="email"
-          required
-          placeholder="email@empresa.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={submitting}
-          className="h-9 flex-1 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        />
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as UserRole)}
-          disabled={submitting}
-          className="h-9 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
-        >
-          <option value="AGENT">Agente</option>
-          <option value="ADMIN">Administrador</option>
-        </select>
-        <button
-          type="submit"
-          disabled={submitting || !email.trim()}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-60"
-        >
-          {submitting ? "Enviando..." : "Enviar convite"}
-        </button>
-      </div>
-      {feedback && (
-        <div
-          className={`mt-2 text-xs ${
-            feedback.type === "ok" ? "text-success" : "text-destructive"
-          }`}
-        >
-          {feedback.msg}
+    <div className="mb-6 space-y-3">
+      <form
+        onSubmit={onSubmit}
+        className="rounded-md border border-border bg-surface p-4"
+      >
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Convidar usuário
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Gere um link de convite e envie manualmente (WhatsApp, e-mail, etc.). O e-mail é
+          opcional e serve apenas para identificação na listagem.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            placeholder="email@empresa.com (opcional)"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={submitting}
+            className="h-9 flex-1 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          />
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRole)}
+            disabled={submitting}
+            className="h-9 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
+          >
+            <option value="AGENT">Agente</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-60"
+          >
+            {submitting ? "Gerando..." : "Gerar link"}
+          </button>
+        </div>
+        {feedback && (
+          <div
+            className={`mt-2 text-xs ${
+              feedback.type === "ok" ? "text-success" : "text-destructive"
+            }`}
+          >
+            {feedback.msg}
+          </div>
+        )}
+        {generatedLink && (
+          <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              Link de convite (válido por 7 dias)
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={generatedLink}
+                onFocus={(e) => e.currentTarget.select()}
+                className="h-8 flex-1 rounded border border-border bg-background px-2 font-mono text-[11px] text-foreground"
+              />
+              <button
+                type="button"
+                onClick={() => copyLink(generatedLink)}
+                className="h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary-hover"
+              >
+                {copied ? "Copiado!" : "Copiar"}
+              </button>
+            </div>
+          </div>
+        )}
+      </form>
+
+      {pending.length > 0 && (
+        <div className="rounded-md border border-border bg-surface p-4">
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Convites pendentes ({pending.length})
+          </div>
+          <ul className="space-y-2">
+            {pending.map((inv) => (
+              <li
+                key={inv.id}
+                className="flex items-center gap-2 rounded border border-border bg-surface-2 p-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium text-foreground">
+                    {inv.email || <span className="text-muted-foreground">(sem e-mail)</span>}{" "}
+                    <span className="ml-1.5 rounded bg-surface px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {inv.role}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
+                    {inv.inviteUrl}
+                  </div>
+                </div>
+                <button
+                  onClick={() => copyLink(inv.inviteUrl)}
+                  className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary"
+                >
+                  Copiar
+                </button>
+                <button
+                  onClick={() => revoke(inv.id)}
+                  className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-destructive/40 hover:text-destructive"
+                >
+                  Cancelar
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-    </form>
+    </div>
   );
 }
 
