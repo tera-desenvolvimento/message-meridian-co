@@ -80,6 +80,8 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             }
 
             const fromMe: boolean = Boolean(msg?.from_me);
+            const isGroup = String(chatId).includes("@g.us");
+
             const accountCandidate = firstPhoneCandidate([
               payload?.account_phone,
               payload?.phone_number,
@@ -94,14 +96,26 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             ]);
             const accountNumberRaw = accountCandidate?.raw || payload?.channel_id;
             const accountDigits = accountCandidate?.digits ?? "";
-            const contactDigits = digitsOnly(fromMe ? chatId : msg?.from || chatId);
-            const isGroup = String(chatId).includes("@g.us");
+
+            // Identificar telefone do remetente real:
+            // - Grupo: msg.author (quem enviou no grupo) ou msg.from quando from_me
+            // - Privado: msg.from (ou chat_id quando from_me)
+            let senderRaw: unknown;
+            if (fromMe) {
+              senderRaw = accountCandidate?.raw || msg?.from || chatId;
+            } else if (isGroup) {
+              senderRaw = msg?.author || msg?.from_phone || msg?.from;
+            } else {
+              senderRaw = msg?.from || chatId;
+            }
+            const contactDigits = digitsOnly(senderRaw);
 
             console.log("🔍 Buscando workspace pelo número...", {
               accountNumberRaw,
               accountDigits,
               contactDigits,
               isGroup,
+              senderRaw,
             });
 
             let workspace = await findWorkspaceByNumber(accountDigits);
@@ -146,8 +160,20 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               continue;
             }
 
+            // Nome do REMETENTE (pessoa que enviou a mensagem)
             const senderName: string =
-              msg?.from_name || msg?.chat_name || (isGroup ? "Grupo" : "Contato");
+              msg?.from_name ||
+              msg?.push_name ||
+              msg?.author_name ||
+              (contactDigits ? `+${contactDigits}` : "Contato");
+
+            // Nome da CONVERSA:
+            // - Grupo: usar chat_name (nome do grupo) — NUNCA usar nome do remetente
+            // - Privado: usar nome do contato
+            const conversationName: string | null = isGroup
+              ? msg?.chat_name || payload?.chat?.name || null
+              : msg?.from_name || msg?.push_name || msg?.chat_name || (contactDigits ? `+${contactDigits}` : "Contato");
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
@@ -155,12 +181,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               `[${msg?.type || "mensagem"}]`;
             const externalMsgId: string | undefined = msg?.id;
 
-            console.log("🔎 Buscando conversa...", { workspaceId: workspace.id, externalId: chatId });
+            console.log("🔎 Buscando conversa...", {
+              workspaceId: workspace.id,
+              externalId: chatId,
+              isGroup,
+              conversationName,
+              senderName,
+            });
             const conversationId = await upsertConversation({
               workspaceId: workspace.id,
               externalId: chatId,
               isGroup,
-              name: senderName,
+              name: conversationName,
             });
             console.log("💬 CONVERSA:", { id: conversationId });
 
@@ -321,29 +353,40 @@ async function upsertConversation(params: {
   workspaceId: string;
   externalId: string;
   isGroup: boolean;
-  name: string;
+  name: string | null;
 }) {
   const { workspaceId, externalId, isGroup, name } = params;
   const { data: existing, error: selErr } = await supabaseAdmin
     .from("conversations")
-    .select("id")
+    .select("id, name")
     .eq("workspace_id", workspaceId)
     .eq("external_id", externalId)
     .maybeSingle();
   if (selErr) console.log("⚠️ Erro buscando conversa:", selErr);
   if (existing) {
-    console.log("📁 Conversa existente encontrada:", existing.id);
+    console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
+    // Para grupos: atualizar o nome apenas se recebemos um nome real e o nome
+    // atual é placeholder. NUNCA sobrescrever nome de grupo com nome de remetente.
+    if (isGroup && name && shouldReplaceGroupName(existing.name)) {
+      const { error: updErr } = await supabaseAdmin
+        .from("conversations")
+        .update({ name })
+        .eq("id", existing.id);
+      if (updErr) console.log("⚠️ Erro atualizando nome do grupo:", updErr);
+      else console.log("✏️ Nome do grupo atualizado para:", name);
+    }
     return existing.id;
   }
 
-  console.log("➕ Criando nova conversa", { workspaceId, externalId, isGroup, name });
+  const finalName = name || (isGroup ? "Grupo" : "Contato");
+  console.log("➕ Criando nova conversa", { workspaceId, externalId, isGroup, name: finalName });
   const { data: created, error } = await supabaseAdmin
     .from("conversations")
     .insert({
       workspace_id: workspaceId,
       external_id: externalId,
       type: isGroup ? "GROUP" : "PRIVATE",
-      name,
+      name: finalName,
       last_message: "",
     })
     .select("id")
@@ -354,6 +397,17 @@ async function upsertConversation(params: {
   }
   console.log("🆕 Conversa criada:", created.id);
   return created.id;
+}
+
+function shouldReplaceGroupName(current: string | null | undefined): boolean {
+  if (!current) return true;
+  const trimmed = current.trim();
+  if (!trimmed) return true;
+  if (trimmed.toLowerCase() === "grupo") return true;
+  if (trimmed.toLowerCase() === "contato") return true;
+  // Apenas dígitos / placeholder de telefone
+  if (/^\+?\d[\d\s-]*$/.test(trimmed)) return true;
+  return false;
 }
 
 function json(body: unknown, status = 200) {
