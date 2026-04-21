@@ -54,6 +54,7 @@ function mapConversation(row: {
   id: string;
   type: "PRIVATE" | "GROUP";
   name: string;
+  external_id?: string | null;
   last_message: string;
   last_message_at: string;
   status: "OPEN" | "PENDING" | "CLOSED";
@@ -65,6 +66,7 @@ function mapConversation(row: {
     id: row.id,
     type: row.type,
     name: row.name,
+    externalId: row.external_id ?? null,
     lastMessage: row.last_message,
     lastMessageAt: row.last_message_at,
     status: row.status,
