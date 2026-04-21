@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Search, User, Users, Inbox, Filter, Plus, Loader2 } from "lucide-react";
+import { Search, User, Users, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
 import type { Conversation, ConversationStatus } from "@/lib/types";
-import { formatRelative } from "@/lib/format";
+import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
