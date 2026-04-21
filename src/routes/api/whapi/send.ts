@@ -186,7 +186,7 @@ export const Route = createFileRoute("/api/whapi/send")({
           await supabaseAdmin
             .from("conversations")
             .update({
-              last_message: content,
+              last_message: signedContent,
               last_message_at: inserted.created_at,
             })
             .eq("id", conversationId);
