@@ -77,8 +77,10 @@ function InboxPage() {
   const showChatOnMobile = !!selectedId;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-      <div className={`${showChatOnMobile ? "hidden" : "flex"} h-full w-full md:flex`}>
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
+      <div
+        className={`${showChatOnMobile ? "hidden" : "flex"} h-full w-full md:flex md:w-auto md:shrink-0`}
+      >
         <ConversationList
           conversations={conversations}
           loading={loadingConvs}
@@ -87,7 +89,7 @@ function InboxPage() {
         />
       </div>
 
-      <div className={`${showChatOnMobile ? "flex" : "hidden"} h-full flex-1 md:flex`}>
+      <div className={`${showChatOnMobile ? "flex" : "hidden"} h-full min-w-0 flex-1 md:flex`}>
         <ChatArea
           conversation={selected}
           messages={messages}
