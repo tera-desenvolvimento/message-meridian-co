@@ -213,19 +213,13 @@ export const api = {
   },
 
   async createWorkspace(name: string): Promise<Workspace> {
-    const uid = await getSessionUserId();
     const { data: ws, error } = await supabase
       .from("workspaces")
       .insert({ name })
       .select("id, name, created_at")
       .single();
     if (error) throw error;
-
-    const { error: mErr } = await supabase
-      .from("memberships")
-      .insert({ user_id: uid, workspace_id: ws.id, role: "ADMIN" });
-    if (mErr) throw mErr;
-
+    // Membership is created automatically by a database trigger.
     return { id: ws.id, name: ws.name, createdAt: ws.created_at };
   },
 
