@@ -15,6 +15,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
 
 const TeamRoute = TeamRouteImport.update({
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhapiSendRoute = ApiWhapiSendRouteImport.update({
+  id: '/api/whapi/send',
+  path: '/api/whapi/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhapiWebhookRoute = ApiPublicWhapiWebhookRouteImport.update({
   id: '/api/public/whapi-webhook',
   path: '/api/public/whapi-webhook',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/send': typeof ApiWhapiSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/send': typeof ApiWhapiSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/send': typeof ApiWhapiSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/send'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
+  ApiWhapiSendRoute: typeof ApiWhapiSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whapi/send': {
+      id: '/api/whapi/send'
+      path: '/api/whapi/send'
+      fullPath: '/api/whapi/send'
+      preLoaderRoute: typeof ApiWhapiSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whapi-webhook': {
       id: '/api/public/whapi-webhook'
       path: '/api/public/whapi-webhook'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
+  ApiWhapiSendRoute: ApiWhapiSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

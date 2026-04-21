@@ -110,25 +110,54 @@ export const api = {
   },
 
   async sendMessage(conversationId: string, content: string): Promise<Message> {
-    const uid = await getSessionUserId();
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", uid)
-      .maybeSingle();
-    const senderName = prof?.name || "Agent";
-    const { data, error } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: conversationId,
-        content,
-        from_me: true,
-        sender_name: senderName,
-      })
-      .select("id, conversation_id, content, from_me, sender_name, created_at")
-      .single();
-    if (error) throw error;
-    return mapMessage(data);
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) throw createAuthRequiredError();
+
+    const res = await fetch("/api/whapi/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ conversationId, content }),
+    });
+
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // ignore parse errors
+    }
+
+    if (!res.ok) {
+      const msg = json?.error || `Falha ao enviar mensagem (HTTP ${res.status})`;
+      throw new Error(msg);
+    }
+
+    if (json?.deduped) {
+      // Webhook already inserted the echo; fetch the most recent outgoing message.
+      const { data } = await supabase
+        .from("messages")
+        .select("id, conversation_id, content, from_me, sender_name, created_at")
+        .eq("conversation_id", conversationId)
+        .eq("from_me", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) return mapMessage(data);
+    }
+
+    const m = json.message;
+    return {
+      id: m.id,
+      conversationId: m.conversationId,
+      content: m.content,
+      fromMe: m.fromMe,
+      senderName: m.senderName,
+      createdAt: m.createdAt,
+      type: "text",
+    };
   },
 
   async assignConversation(conversationId: string): Promise<Conversation> {
