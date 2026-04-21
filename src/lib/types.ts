@@ -51,7 +51,8 @@ export interface TeamMember {
   name: string;
   email: string;
   role: UserRole;
-  status: "ACTIVE" | "INVITED";
+  status: "ACTIVE" | "DISABLED" | "INVITED";
+  active: boolean;
   joinedAt: string;
 }
 
