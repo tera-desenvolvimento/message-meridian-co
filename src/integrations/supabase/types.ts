@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           created_at: string
+          external_id: string | null
           id: string
           last_message: string
           last_message_at: string
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           created_at?: string
+          external_id?: string | null
           id?: string
           last_message?: string
           last_message_at?: string
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           created_at?: string
+          external_id?: string | null
           id?: string
           last_message?: string
           last_message_at?: string
@@ -95,25 +98,31 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          external_id: string | null
           from_me: boolean
           id: string
           sender_name: string
+          sender_phone: string | null
         }
         Insert: {
           content: string
           conversation_id: string
           created_at?: string
+          external_id?: string | null
           from_me?: boolean
           id?: string
           sender_name?: string
+          sender_phone?: string | null
         }
         Update: {
           content?: string
           conversation_id?: string
           created_at?: string
+          external_id?: string | null
           from_me?: boolean
           id?: string
           sender_name?: string
+          sender_phone?: string | null
         }
         Relationships: [
           {
