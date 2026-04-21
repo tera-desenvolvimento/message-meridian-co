@@ -173,7 +173,7 @@ function SettingsPanel() {
                   placeholder="Usado para validar requisições recebidas"
                 />
                 <Field
-                  label="Número conectado (opcional)"
+                  label="Número conectado (obrigatório para receber mensagens)"
                   value={integ.phone_number}
                   onChange={(v) => setInteg({ ...integ, phone_number: v })}
                   placeholder="+55 11 99999-9999"
@@ -184,7 +184,10 @@ function SettingsPanel() {
             <section className="rounded-md border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold">URL do Webhook</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Cole esta URL no painel do Whapi para receber mensagens neste workspace.
+                Cole esta URL no painel do Whapi. O workspace será identificado
+                automaticamente pelo número conectado. Configure também o header{" "}
+                <code className="rounded bg-surface-2 px-1">x-webhook-secret</code> com o
+                secret definido acima.
               </p>
               <div className="mt-3 break-all rounded border border-border bg-surface-2 px-3 py-2 font-mono text-xs">
                 {webhookUrl}
