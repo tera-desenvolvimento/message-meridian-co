@@ -353,29 +353,40 @@ async function upsertConversation(params: {
   workspaceId: string;
   externalId: string;
   isGroup: boolean;
-  name: string;
+  name: string | null;
 }) {
   const { workspaceId, externalId, isGroup, name } = params;
   const { data: existing, error: selErr } = await supabaseAdmin
     .from("conversations")
-    .select("id")
+    .select("id, name")
     .eq("workspace_id", workspaceId)
     .eq("external_id", externalId)
     .maybeSingle();
   if (selErr) console.log("⚠️ Erro buscando conversa:", selErr);
   if (existing) {
-    console.log("📁 Conversa existente encontrada:", existing.id);
+    console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
+    // Para grupos: atualizar o nome apenas se recebemos um nome real e o nome
+    // atual é placeholder. NUNCA sobrescrever nome de grupo com nome de remetente.
+    if (isGroup && name && shouldReplaceGroupName(existing.name)) {
+      const { error: updErr } = await supabaseAdmin
+        .from("conversations")
+        .update({ name })
+        .eq("id", existing.id);
+      if (updErr) console.log("⚠️ Erro atualizando nome do grupo:", updErr);
+      else console.log("✏️ Nome do grupo atualizado para:", name);
+    }
     return existing.id;
   }
 
-  console.log("➕ Criando nova conversa", { workspaceId, externalId, isGroup, name });
+  const finalName = name || (isGroup ? "Grupo" : "Contato");
+  console.log("➕ Criando nova conversa", { workspaceId, externalId, isGroup, name: finalName });
   const { data: created, error } = await supabaseAdmin
     .from("conversations")
     .insert({
       workspace_id: workspaceId,
       external_id: externalId,
       type: isGroup ? "GROUP" : "PRIVATE",
-      name,
+      name: finalName,
       last_message: "",
     })
     .select("id")
