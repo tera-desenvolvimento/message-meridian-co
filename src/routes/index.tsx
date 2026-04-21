@@ -136,6 +136,10 @@ function Inbox() {
           loading={loadingConvs}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          onConversationCreated={(id) => {
+            void refreshConversations();
+            setSelectedId(id);
+          }}
         />
       </div>
 

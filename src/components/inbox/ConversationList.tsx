@@ -1,15 +1,29 @@
 import { useMemo, useState } from "react";
-import { Search, User, Users, Inbox, Filter } from "lucide-react";
+import { Search, User, Users, Inbox, Filter, Plus, Loader2 } from "lucide-react";
 import type { Conversation, ConversationStatus } from "@/lib/types";
 import { formatRelative } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/http";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Props {
   conversations: Conversation[];
   loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onConversationCreated?: (id: string) => void;
 }
 
 const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
@@ -26,9 +40,16 @@ const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
   URGENT: "bg-destructive",
 };
 
-export function ConversationList({ conversations, loading, selectedId, onSelect }: Props) {
+export function ConversationList({
+  conversations,
+  loading,
+  selectedId,
+  onSelect,
+  onConversationCreated,
+}: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  const [newOpen, setNewOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,6 +81,14 @@ export function ConversationList({ conversations, loading, selectedId, onSelect 
           <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {counts.ALL} tickets
           </span>
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            title="Nova conversa"
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         <div className="relative">
@@ -171,7 +200,128 @@ export function ConversationList({ conversations, loading, selectedId, onSelect 
           </ul>
         )}
       </div>
+
+      <NewConversationDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        onCreated={(id) => {
+          onConversationCreated?.(id);
+          onSelect(id);
+        }}
+      />
     </aside>
+  );
+}
+
+function NewConversationDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onCreated: (id: string) => void;
+}) {
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function reset() {
+    setPhone("");
+    setName("");
+    setSubmitting(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 8) {
+      toast.error("Informe um número de WhatsApp válido (com DDI/DDD).");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Informe o nome do contato.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await api.startConversation(digits, name.trim());
+      toast.success(result.created ? "Conversa criada" : "Conversa já existia — abrindo");
+      onCreated(result.id);
+      onOpenChange(false);
+      reset();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao iniciar conversa";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) reset();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nova conversa</DialogTitle>
+          <DialogDescription>
+            Inicie uma conversa enviando o primeiro contato pelo WhatsApp do workspace.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-conv-phone">Número do WhatsApp</Label>
+            <Input
+              id="new-conv-phone"
+              type="tel"
+              autoComplete="off"
+              placeholder="Ex.: +55 11 91234-5678"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={submitting}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Inclua o código do país (DDI) e o DDD. Caracteres não numéricos são removidos.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-conv-name">Nome do contato</Label>
+            <Input
+              id="new-conv-name"
+              placeholder="Como esse contato deve aparecer na inbox"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={submitting}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Criando…
+                </>
+              ) : (
+                "Criar conversa"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
