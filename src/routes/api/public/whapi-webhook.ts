@@ -80,14 +80,20 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             }
 
             const fromMe: boolean = Boolean(msg?.from_me);
-            const accountNumberRaw: string | undefined =
-              payload?.channel_id ||
-              payload?.account ||
-              payload?.account_phone ||
-              msg?.device_phone ||
-              (fromMe ? msg?.from : msg?.to);
-
-            const accountDigits = digitsOnly(accountNumberRaw);
+            const accountCandidate = firstPhoneCandidate([
+              payload?.account_phone,
+              payload?.phone_number,
+              payload?.phone,
+              payload?.channel?.phone_number,
+              payload?.channel?.phone,
+              payload?.instance?.phone_number,
+              payload?.instance?.phone,
+              msg?.device_phone,
+              msg?.to,
+              fromMe ? msg?.from : undefined,
+            ]);
+            const accountNumberRaw = accountCandidate?.raw || payload?.channel_id;
+            const accountDigits = accountCandidate?.digits ?? "";
             const contactDigits = digitsOnly(fromMe ? chatId : msg?.from || chatId);
             const isGroup = String(chatId).includes("@g.us");
 
@@ -98,7 +104,13 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               isGroup,
             });
 
-            const workspace = await findWorkspaceByNumber(accountDigits);
+            let workspace = await findWorkspaceByNumber(accountDigits);
+            if (!workspace && providedSecret) {
+              workspace = await findWorkspaceByWebhookSecret(providedSecret);
+            }
+            if (!workspace) {
+              workspace = await findSingleEnabledWhapiWorkspace();
+            }
             if (!workspace) {
               console.log("❌ Nenhum workspace encontrado para o número:", accountDigits, "(chat_id:", chatId, ")");
               skipped++;
@@ -215,6 +227,58 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
 function digitsOnly(v: unknown): string {
   if (!v) return "";
   return String(v).replace(/\D+/g, "");
+}
+
+function firstPhoneCandidate(values: unknown[]): { raw: unknown; digits: string } | null {
+  for (const raw of values) {
+    const digits = digitsOnly(raw);
+    if (digits.length >= 8) return { raw, digits };
+  }
+  return null;
+}
+
+async function findSingleEnabledWhapiWorkspace() {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_integrations")
+    .select("workspace_id")
+    .eq("provider", "whapi")
+    .eq("enabled", true);
+  if (error) console.log("⚠️ Erro buscando fallback de integração:", error);
+  const workspaceIds = [...new Set((data ?? []).map((row) => row.workspace_id).filter(Boolean))];
+  if (workspaceIds.length === 1) {
+    const { data: workspace, error: wsErr } = await supabaseAdmin
+      .from("workspaces")
+      .select("id, name, whatsapp_number")
+      .eq("id", workspaceIds[0])
+      .maybeSingle();
+    if (wsErr) console.log("⚠️ Erro carregando workspace fallback:", wsErr);
+    if (workspace) {
+      console.log("🎯 Fallback: único workspace Whapi ativo encontrado:", workspace.id);
+      return workspace;
+    }
+  }
+  console.log("🚫 Fallback Whapi não aplicável. Workspaces ativos:", workspaceIds.length);
+  return null;
+}
+
+async function findWorkspaceByWebhookSecret(secret: string) {
+  const { data: integ, error } = await supabaseAdmin
+    .from("workspace_integrations")
+    .select("workspace_id")
+    .eq("provider", "whapi")
+    .eq("enabled", true)
+    .eq("webhook_secret", secret)
+    .maybeSingle();
+  if (error) console.log("⚠️ Erro buscando workspace pelo secret:", error);
+  if (!integ?.workspace_id) return null;
+  const { data: workspace, error: wsErr } = await supabaseAdmin
+    .from("workspaces")
+    .select("id, name, whatsapp_number")
+    .eq("id", integ.workspace_id)
+    .maybeSingle();
+  if (wsErr) console.log("⚠️ Erro carregando workspace por secret:", wsErr);
+  if (workspace) console.log("🎯 Match workspace por secret do webhook:", workspace.id);
+  return workspace ?? null;
 }
 
 async function findWorkspaceByNumber(digits: string) {
