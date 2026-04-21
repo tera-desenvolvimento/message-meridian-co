@@ -80,14 +80,20 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             }
 
             const fromMe: boolean = Boolean(msg?.from_me);
-            const accountNumberRaw: string | undefined =
-              payload?.channel_id ||
-              payload?.account ||
-              payload?.account_phone ||
-              msg?.device_phone ||
-              (fromMe ? msg?.from : msg?.to);
-
-            const accountDigits = digitsOnly(accountNumberRaw);
+            const accountCandidate = firstPhoneCandidate([
+              payload?.account_phone,
+              payload?.phone_number,
+              payload?.phone,
+              payload?.channel?.phone_number,
+              payload?.channel?.phone,
+              payload?.instance?.phone_number,
+              payload?.instance?.phone,
+              msg?.device_phone,
+              msg?.to,
+              fromMe ? msg?.from : undefined,
+            ]);
+            const accountNumberRaw = accountCandidate?.raw || payload?.channel_id;
+            const accountDigits = accountCandidate?.digits ?? "";
             const contactDigits = digitsOnly(fromMe ? chatId : msg?.from || chatId);
             const isGroup = String(chatId).includes("@g.us");
 
@@ -98,7 +104,10 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               isGroup,
             });
 
-            const workspace = await findWorkspaceByNumber(accountDigits);
+            let workspace = await findWorkspaceByNumber(accountDigits);
+            if (!workspace) {
+              workspace = await findSingleEnabledWhapiWorkspace();
+            }
             if (!workspace) {
               console.log("❌ Nenhum workspace encontrado para o número:", accountDigits, "(chat_id:", chatId, ")");
               skipped++;
