@@ -95,6 +95,18 @@ export const Route = createFileRoute("/api/whapi/send")({
             return jsonResponse({ error: "Token do Whapi não configurado" }, 400);
           }
 
+          // ----- Sender name from profile (used for signature) -----
+          const { data: prof } = await supabaseAdmin
+            .from("profiles")
+            .select("name")
+            .eq("id", userId)
+            .maybeSingle();
+          const senderName = prof?.name || "Agent";
+
+          // Prefix every outgoing message with the agent signature so both the
+          // recipient (on WhatsApp) and the local panel see who sent it.
+          const signedContent = `*${senderName}:*\n${content}`;
+
           // ----- Send to Whapi -----
           const apiUrl = integration.api_url.replace(/\/$/, "");
           const whapiUrl = `${apiUrl}/messages/text`;
@@ -109,7 +121,7 @@ export const Route = createFileRoute("/api/whapi/send")({
                 "Content-Type": "application/json",
                 Accept: "application/json",
               },
-              body: JSON.stringify({ to: conv.external_id, body: content }),
+              body: JSON.stringify({ to: conv.external_id, body: signedContent }),
             });
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -144,18 +156,10 @@ export const Route = createFileRoute("/api/whapi/send")({
           const senderPhone: string | null =
             whapiJson?.message?.from || whapiJson?.from || null;
 
-          // ----- Sender name from profile -----
-          const { data: prof } = await supabaseAdmin
-            .from("profiles")
-            .select("name")
-            .eq("id", userId)
-            .maybeSingle();
-          const senderName = prof?.name || "Agent";
-
           // ----- Insert message (admin to bypass RLS races; conversation already validated) -----
           const insertPayload: Database["public"]["Tables"]["messages"]["Insert"] = {
             conversation_id: conversationId,
-            content,
+            content: signedContent,
             from_me: true,
             sender_name: senderName,
             external_id: externalId,
