@@ -40,6 +40,22 @@ const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
   URGENT: "bg-destructive",
 };
 
+const priorityFlag: Record<
+  "LOW" | "NORMAL" | "HIGH" | "URGENT",
+  { label: string; className: string } | null
+> = {
+  LOW: null,
+  NORMAL: null,
+  HIGH: {
+    label: "High",
+    className: "border-warning/40 bg-warning/10 text-warning",
+  },
+  URGENT: {
+    label: "Urgent",
+    className: "border-destructive/40 bg-destructive/10 text-destructive",
+  },
+};
+
 export function ConversationList({
   conversations,
   loading,
