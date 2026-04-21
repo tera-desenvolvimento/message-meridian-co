@@ -111,7 +111,11 @@ function SettingsPanel() {
   }
 
   const LOVABLE_PROJECT_ID = "b4d9d4b8-7326-4928-873e-3f14d3b34c62";
-  const webhookUrl = `https://project--${LOVABLE_PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
+  const baseWebhookUrl = `https://project--${LOVABLE_PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
+  const webhookSecret = integ.webhook_secret.trim();
+  const webhookUrl = webhookSecret
+    ? `${baseWebhookUrl}?secret=${encodeURIComponent(webhookSecret)}`
+    : baseWebhookUrl;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -185,10 +189,8 @@ function SettingsPanel() {
             <section className="rounded-md border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold">URL do Webhook</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Cole esta URL no painel do Whapi. O workspace será identificado
-                automaticamente pelo número conectado. Configure também o header{" "}
-                <code className="rounded bg-surface-2 px-1">x-webhook-secret</code> com o
-                secret definido acima.
+                Cole esta URL completa no painel do Whapi. O workspace será identificado
+                automaticamente pelo número conectado ou pelo secret configurado acima.
               </p>
               <div className="mt-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
                 ⚠️ Esta URL funciona <strong className="text-foreground">somente após publicar o projeto</strong>.
