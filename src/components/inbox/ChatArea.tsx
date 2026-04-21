@@ -1,20 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Check,
   ChevronDown,
   Flag,
   Loader2,
   MoreHorizontal,
   Send,
+  Trash2,
+  UserMinus,
   UserPlus,
   Users,
   User,
 } from "lucide-react";
-import type { Conversation, Message } from "@/lib/types";
+import type {
+  Conversation,
+  ConversationPriority,
+  ConversationStatus,
+  Message,
+  TeamMember,
+} from "@/lib/types";
 import { api } from "@/lib/http";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { MessageBlock } from "./MessageBlock";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   conversation: Conversation | null;
@@ -22,8 +49,26 @@ interface Props {
   loadingMessages: boolean;
   onSent: () => void;
   onAssigned: () => void;
+  onDeleted?: () => void;
   onBack?: () => void;
 }
+
+const STATUS_OPTIONS: { value: ConversationStatus; label: string }[] = [
+  { value: "OPEN", label: "Open" },
+  { value: "PENDING", label: "Pending" },
+  { value: "CLOSED", label: "Closed" },
+];
+
+const PRIORITY_OPTIONS: {
+  value: ConversationPriority;
+  label: string;
+  cls: string;
+}[] = [
+  { value: "LOW", label: "Low", cls: "text-muted-foreground" },
+  { value: "NORMAL", label: "Normal", cls: "text-info" },
+  { value: "HIGH", label: "High", cls: "text-warning" },
+  { value: "URGENT", label: "Urgent", cls: "text-destructive" },
+];
 
 export function ChatArea({
   conversation,
@@ -31,12 +76,15 @@ export function ChatArea({
   loadingMessages,
   onSent,
   onAssigned,
+  onDeleted,
   onBack,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [assigning, setAssigning] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +97,17 @@ export function ChatArea({
     setDraft("");
     setError(null);
   }, [conversation?.id]);
+
+  // Load workspace members lazily on first interaction
+  async function ensureMembers() {
+    if (members.length > 0) return;
+    try {
+      const list = await api.listUsers();
+      setMembers(list);
+    } catch (e) {
+      console.error("Failed to load members", e);
+    }
+  }
 
   if (!conversation) {
     return (
@@ -84,23 +143,40 @@ export function ChatArea({
     }
   }
 
-  async function handleAssign() {
-    if (assigning || !conversation) return;
-    setAssigning(true);
+  async function withBusy(fn: () => Promise<unknown>) {
+    if (!conversation) return;
+    setBusy(true);
     setError(null);
     try {
-      await api.assignConversation(conversation.id);
+      await fn();
       onAssigned();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to assign");
+      setError(e instanceof Error ? e.message : "Action failed");
     } finally {
-      setAssigning(false);
+      setBusy(false);
     }
   }
 
+  async function handleDelete() {
+    if (!conversation) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.deleteConversation(conversation.id);
+      setConfirmDelete(false);
+      onDeleted?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const currentPriority = PRIORITY_OPTIONS.find((p) => p.value === conversation.priority);
+
   return (
     <section className="flex h-full min-h-0 w-full flex-col bg-background">
-      {/* HEADER — panel-style */}
+      {/* HEADER */}
       <header className="z-10 shrink-0 border-b border-border bg-surface">
         <div className="flex items-center gap-3 px-4 py-3 md:px-6">
           {onBack && (
@@ -145,27 +221,171 @@ export function ChatArea({
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            <ToolbarButton icon={<Flag className="h-3.5 w-3.5" />} label="Priority" />
-            <ToolbarButton icon={<ChevronDown className="h-3.5 w-3.5" />} label="Status" />
-            <ToolbarButton
-              icon={
-                assigning ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
+            {/* Priority */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={busy}
+                  className={cn(
+                    "hidden items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 transition hover:border-border-strong hover:bg-surface-2 disabled:opacity-60 sm:inline-flex",
+                  )}
+                >
+                  <Flag className={cn("h-3.5 w-3.5", currentPriority?.cls)} />
+                  {currentPriority?.label ?? "Priority"}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>Set priority</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {PRIORITY_OPTIONS.map((p) => (
+                  <DropdownMenuItem
+                    key={p.value}
+                    onSelect={() =>
+                      withBusy(() => api.setConversationPriority(conversation.id, p.value))
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    <Flag className={cn("h-3.5 w-3.5", p.cls)} />
+                    <span className="flex-1">{p.label}</span>
+                    {conversation.priority === p.value && <Check className="h-3.5 w-3.5" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Status */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={busy}
+                  className="hidden items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[11px] font-medium text-foreground/80 transition hover:border-border-strong hover:bg-surface-2 disabled:opacity-60 sm:inline-flex"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                  Status
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>Change status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {STATUS_OPTIONS.map((s) => (
+                  <DropdownMenuItem
+                    key={s.value}
+                    onSelect={() =>
+                      withBusy(() => api.setConversationStatus(conversation.id, s.value))
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    <StatusBadge status={s.value} />
+                    <span className="ml-auto">
+                      {conversation.status === s.value && <Check className="h-3.5 w-3.5" />}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Assign */}
+            <DropdownMenu onOpenChange={(o) => o && void ensureMembers()}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={busy}
+                  className="hidden items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60 sm:inline-flex"
+                >
+                  {busy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <UserPlus className="h-3.5 w-3.5" />
+                  )}
+                  Assign
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Assign to</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => withBusy(() => api.assignConversation(conversation.id))}
+                  className="flex items-center gap-2"
+                >
                   <UserPlus className="h-3.5 w-3.5" />
-                )
-              }
-              label="Assign"
-              onClick={handleAssign}
-              disabled={assigning}
-              variant="primary"
-            />
-            <button
-              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground"
-              aria-label="More"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+                  Assign to me
+                </DropdownMenuItem>
+                {conversation.assignedTo && (
+                  <DropdownMenuItem
+                    onSelect={() => withBusy(() => api.unassignConversation(conversation.id))}
+                    className="flex items-center gap-2"
+                  >
+                    <UserMinus className="h-3.5 w-3.5" />
+                    Unassign
+                  </DropdownMenuItem>
+                )}
+                {members.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Team members
+                    </DropdownMenuLabel>
+                    {members.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        onSelect={() =>
+                          withBusy(() => api.assignConversation(conversation.id, m.id))
+                        }
+                        className="flex items-center gap-2"
+                      >
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
+                          {m.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="flex-1 truncate">{m.name}</span>
+                        {conversation.assignedTo?.id === m.id && (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* More */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={busy}
+                  className="rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground disabled:opacity-60"
+                  aria-label="More"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    withBusy(() => api.setConversationStatus(conversation.id, "CLOSED"))
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Mark as closed
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    withBusy(() => api.setConversationStatus(conversation.id, "OPEN"))
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                  Reopen
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => setConfirmDelete(true)}
+                  className="flex items-center gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete conversation
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -173,6 +393,17 @@ export function ChatArea({
         <div className="flex items-center gap-2 border-t border-border bg-surface px-4 py-2 md:px-6">
           <PropPill label="Status">
             <StatusBadge status={conversation.status} />
+          </PropPill>
+          <PropPill label="Priority">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[11px] font-medium",
+                currentPriority?.cls,
+              )}
+            >
+              <Flag className="h-3 w-3" />
+              {currentPriority?.label}
+            </span>
           </PropPill>
           <PropPill label="Type">
             <TypeTag type={conversation.type} />
@@ -183,7 +414,7 @@ export function ChatArea({
         </div>
       </header>
 
-      {/* MESSAGES — single column blocks */}
+      {/* MESSAGES */}
       <div
         ref={scrollRef}
         className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-4 py-5 md:px-8 md:py-6"
@@ -252,37 +483,32 @@ export function ChatArea({
           </div>
         </div>
       </div>
-    </section>
-  );
-}
 
-function ToolbarButton({
-  icon,
-  label,
-  onClick,
-  disabled,
-  variant = "default",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  variant?: "default" | "primary";
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "hidden items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-60 sm:inline-flex",
-        variant === "primary"
-          ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-          : "border-border bg-surface text-foreground/80 hover:border-border-strong hover:bg-surface-2",
-      )}
-    >
-      {icon}
-      {label}
-    </button>
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the conversation and all its messages. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }
 
