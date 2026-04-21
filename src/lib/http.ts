@@ -376,22 +376,60 @@ export const api = {
       .update({ role })
       .eq("workspace_id", wsId)
       .eq("user_id", userId)
-      .select("user_id, role, created_at")
+      .select("user_id, role, created_at, active")
       .single();
     if (error) throw error;
     const { data: prof } = await supabase
       .from("profiles")
-      .select("name")
+      .select("name, email")
       .eq("id", userId)
       .maybeSingle();
+    const active = (data as { active?: boolean }).active ?? true;
     return {
       id: data.user_id,
       name: prof?.name || "—",
-      email: "",
+      email: prof?.email || "",
       role: data.role as UserRole,
-      status: "ACTIVE",
+      status: active ? "ACTIVE" : "DISABLED",
+      active,
       joinedAt: data.created_at,
     };
+  },
+
+  async updateMemberActive(userId: string, active: boolean): Promise<{ ok: true }> {
+    const wsId = await requireWorkspaceId();
+    const { error } = await supabase
+      .from("memberships")
+      .update({ active } as never)
+      .eq("workspace_id", wsId)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return { ok: true };
+  },
+
+  async updateMemberName(userId: string, name: string): Promise<{ ok: true }> {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ name })
+      .eq("id", userId);
+    if (error) throw error;
+    return { ok: true };
+  },
+
+  async updateOwnProfile(input: { name: string }): Promise<{ ok: true }> {
+    const uid = await getSessionUserId();
+    const { error } = await supabase
+      .from("profiles")
+      .update({ name: input.name })
+      .eq("id", uid);
+    if (error) throw error;
+    return { ok: true };
+  },
+
+  async updateOwnPassword(newPassword: string): Promise<{ ok: true }> {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   },
 
   async removeUser(userId: string): Promise<{ ok: true }> {
@@ -440,27 +478,42 @@ async function manualListConversations(wsId: string): Promise<Conversation[]> {
 async function manualListUsers(wsId: string): Promise<TeamMember[]> {
   const { data, error } = await supabase
     .from("memberships")
-    .select("user_id, role, created_at")
+    .select("user_id, role, created_at, active")
     .eq("workspace_id", wsId);
   if (error) throw error;
-  const rows = data ?? [];
+  const rows = (data ?? []) as Array<{
+    user_id: string;
+    role: string;
+    created_at: string;
+    active?: boolean;
+  }>;
   const ids = rows.map((r) => r.user_id);
-  let names = new Map<string, string>();
+  let profiles = new Map<string, { name: string; email: string }>();
   if (ids.length) {
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, name")
+      .select("id, name, email")
       .in("id", ids);
-    names = new Map((profs ?? []).map((p) => [p.id, p.name]));
+    profiles = new Map(
+      ((profs ?? []) as Array<{ id: string; name: string; email: string | null }>).map((p) => [
+        p.id,
+        { name: p.name, email: p.email ?? "" },
+      ]),
+    );
   }
-  return rows.map((r) => ({
-    id: r.user_id,
-    name: names.get(r.user_id) || "—",
-    email: "",
-    role: r.role as UserRole,
-    status: "ACTIVE" as const,
-    joinedAt: r.created_at,
-  }));
+  return rows.map((r) => {
+    const active = r.active ?? true;
+    const prof = profiles.get(r.user_id);
+    return {
+      id: r.user_id,
+      name: prof?.name || "—",
+      email: prof?.email || "",
+      role: r.role as UserRole,
+      status: active ? ("ACTIVE" as const) : ("DISABLED" as const),
+      active,
+      joinedAt: r.created_at,
+    };
+  });
 }
 
 // Kept for backward compatibility with old code that imported these.
