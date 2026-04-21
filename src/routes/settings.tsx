@@ -110,7 +110,8 @@ function SettingsPanel() {
     setSaving(false);
   }
 
-  const webhookUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/whapi-webhook`;
+  const LOVABLE_PROJECT_ID = "b4d9d4b8-7326-4928-873e-3f14d3b34c62";
+  const webhookUrl = `https://project--${LOVABLE_PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
 
   return (
     <div className="flex-1 overflow-y-auto">
