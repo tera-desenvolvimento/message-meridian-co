@@ -160,8 +160,20 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               continue;
             }
 
+            // Nome do REMETENTE (pessoa que enviou a mensagem)
             const senderName: string =
-              msg?.from_name || msg?.chat_name || (isGroup ? "Grupo" : "Contato");
+              msg?.from_name ||
+              msg?.push_name ||
+              msg?.author_name ||
+              (contactDigits ? `+${contactDigits}` : "Contato");
+
+            // Nome da CONVERSA:
+            // - Grupo: usar chat_name (nome do grupo) — NUNCA usar nome do remetente
+            // - Privado: usar nome do contato
+            const conversationName: string | null = isGroup
+              ? msg?.chat_name || payload?.chat?.name || null
+              : msg?.from_name || msg?.push_name || msg?.chat_name || (contactDigits ? `+${contactDigits}` : "Contato");
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
@@ -169,12 +181,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               `[${msg?.type || "mensagem"}]`;
             const externalMsgId: string | undefined = msg?.id;
 
-            console.log("🔎 Buscando conversa...", { workspaceId: workspace.id, externalId: chatId });
+            console.log("🔎 Buscando conversa...", {
+              workspaceId: workspace.id,
+              externalId: chatId,
+              isGroup,
+              conversationName,
+              senderName,
+            });
             const conversationId = await upsertConversation({
               workspaceId: workspace.id,
               externalId: chatId,
               isGroup,
-              name: senderName,
+              name: conversationName,
             });
             console.log("💬 CONVERSA:", { id: conversationId });
 
