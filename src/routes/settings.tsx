@@ -110,7 +110,8 @@ function SettingsPanel() {
     setSaving(false);
   }
 
-  const webhookUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/whapi-webhook`;
+  const LOVABLE_PROJECT_ID = "b4d9d4b8-7326-4928-873e-3f14d3b34c62";
+  const webhookUrl = `https://project--${LOVABLE_PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -189,6 +190,11 @@ function SettingsPanel() {
                 <code className="rounded bg-surface-2 px-1">x-webhook-secret</code> com o
                 secret definido acima.
               </p>
+              <div className="mt-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
+                ⚠️ Esta URL funciona <strong className="text-foreground">somente após publicar o projeto</strong>.
+                Clique em <strong className="text-foreground">Publish</strong> no canto superior direito do editor
+                antes de configurá-la no Whapi.
+              </div>
               <div className="mt-3 break-all rounded border border-border bg-surface-2 px-3 py-2 font-mono text-xs">
                 {webhookUrl}
               </div>
