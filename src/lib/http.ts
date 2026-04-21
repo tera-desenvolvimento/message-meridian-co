@@ -19,11 +19,16 @@ import type {
 
 // ----- helpers -----
 
+function createAuthRequiredError() {
+  const error = new Error("Sua sessão expirou. Faça login novamente.");
+  error.name = "AuthRequiredError";
+  return error;
+}
+
 async function getSessionUserId(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  const uid = data.session?.user.id;
-  if (!uid) throw new Error("Not authenticated");
-  return uid;
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw createAuthRequiredError();
+  return data.user.id;
 }
 
 async function getCurrentMembership() {
@@ -213,13 +218,36 @@ export const api = {
   },
 
   async createWorkspace(name: string): Promise<Workspace> {
-    const { data: ws, error } = await supabase
+    const workspaceId = crypto.randomUUID();
+    const creatorId = await getSessionUserId();
+
+    const { error: workspaceError } = await supabase
       .from("workspaces")
-      .insert({ name })
+      .insert({ id: workspaceId, name, created_by: creatorId } as never);
+    if (workspaceError) {
+      throw new Error("Não foi possível criar o workspace. Verifique os dados e tente novamente.");
+    }
+
+    const { error: membershipError } = await supabase
+      .from("memberships")
+      .upsert(
+        { user_id: creatorId, workspace_id: workspaceId, role: "ADMIN" },
+        { onConflict: "user_id,workspace_id", ignoreDuplicates: true },
+      );
+    if (membershipError) {
+      throw new Error("Workspace criado, mas não foi possível vincular seu usuário. Tente novamente.");
+    }
+
+    const { data: ws, error: selectError } = await supabase
+      .from("workspaces")
       .select("id, name, created_at")
+      .eq("id", workspaceId)
       .single();
-    if (error) throw error;
-    // Membership is created automatically by a database trigger.
+
+    if (selectError) {
+      throw new Error("Workspace criado, mas não foi possível carregar os dados. Recarregue a página.");
+    }
+
     return { id: ws.id, name: ws.name, createdAt: ws.created_at };
   },
 

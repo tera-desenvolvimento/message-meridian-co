@@ -40,6 +40,11 @@ function OnboardingInner() {
       setWorkspace(ws);
       navigate({ to: "/" });
     } catch (err) {
+      if (err instanceof Error && err.name === "AuthRequiredError") {
+        logout();
+        navigate({ to: "/login" });
+        return;
+      }
       setError(err instanceof Error ? err.message : "Falha ao criar workspace");
     } finally {
       setSubmitting(false);
