@@ -8,6 +8,7 @@ import { ChatArea } from "@/components/inbox/ChatArea";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,7 +75,22 @@ function Inbox() {
     [selectedId],
   );
 
-  usePolling(refreshConversations, 4000, true);
+  usePolling(refreshConversations, 8000, true);
+
+  // Realtime: refresh conversations on any change
+  useEffect(() => {
+    const channel = supabase
+      .channel("conversations-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversations" },
+        () => void refreshConversations(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshConversations]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -84,7 +100,28 @@ function Inbox() {
     void refreshMessages(false);
   }, [selectedId, refreshMessages]);
 
-  usePolling(() => refreshMessages(true), 3000, !!selectedId);
+  // Realtime: new messages in selected conversation
+  useEffect(() => {
+    if (!selectedId) return;
+    const channel = supabase
+      .channel(`messages-${selectedId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${selectedId}`,
+        },
+        () => void refreshMessages(true),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedId, refreshMessages]);
+
+  usePolling(() => refreshMessages(true), 6000, !!selectedId);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
   const showChatOnMobile = !!selectedId;
