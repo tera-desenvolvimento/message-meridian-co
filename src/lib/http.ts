@@ -57,6 +57,7 @@ function mapConversation(row: {
   last_message: string;
   last_message_at: string;
   status: "OPEN" | "PENDING" | "CLOSED";
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   assigned_to: string | null;
   assignee?: { id: string; name: string } | null;
 }): Conversation {
@@ -67,6 +68,7 @@ function mapConversation(row: {
     lastMessage: row.last_message,
     lastMessageAt: row.last_message_at,
     status: row.status,
+    priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
   };
 }
