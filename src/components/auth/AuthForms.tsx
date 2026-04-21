@@ -33,8 +33,7 @@ export function AuthShell({
           </p>
         </div>
         <div className="text-xs text-muted-foreground">
-          <span className="font-mono">demo@crm.app</span> ·{" "}
-          <span className="font-mono">demo1234</span>
+          Multi-workspace · Acesso real via Lovable Cloud.
         </div>
       </div>
 
@@ -88,8 +87,8 @@ export function ErrorBox({ message }: { message: string | null }) {
 export function LoginForm() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("demo@crm.app");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
