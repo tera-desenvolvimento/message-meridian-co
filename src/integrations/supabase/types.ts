@@ -14,16 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          id: string
+          last_message: string
+          last_message_at: string
+          name: string
+          status: Database["public"]["Enums"]["conversation_status"]
+          type: Database["public"]["Enums"]["conversation_type"]
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          name: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          type?: Database["public"]["Enums"]["conversation_type"]
+          workspace_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          name?: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          type?: Database["public"]["Enums"]["conversation_type"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          from_me: boolean
+          id: string
+          sender_name: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          from_me?: boolean
+          id?: string
+          sender_name?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          from_me?: boolean
+          id?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_workspace_id: { Args: never; Returns: string }
+      is_admin_of: { Args: { _workspace_id: string }; Returns: boolean }
+      is_member_of: { Args: { _workspace_id: string }; Returns: boolean }
+      shares_workspace_with: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      conversation_status: "OPEN" | "PENDING" | "CLOSED"
+      conversation_type: "PRIVATE" | "GROUP"
+      user_role: "ADMIN" | "AGENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +301,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      conversation_status: ["OPEN", "PENDING", "CLOSED"],
+      conversation_type: ["PRIVATE", "GROUP"],
+      user_role: ["ADMIN", "AGENT"],
+    },
   },
 } as const
