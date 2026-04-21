@@ -25,3 +25,35 @@ export interface Message {
   createdAt: string;
   type?: "text" | "image" | "audio";
 }
+
+// ---------- Auth & Workspace ----------
+
+export type UserRole = "ADMIN" | "AGENT";
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  workspaceId: string | null;
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: "ACTIVE" | "INVITED";
+  joinedAt: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
