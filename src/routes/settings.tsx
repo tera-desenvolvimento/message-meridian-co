@@ -91,6 +91,18 @@ function SettingsPanel() {
       .upsert(payload, { onConflict: "workspace_id,provider" });
     if (error) {
       setFeedback({ type: "err", msg: error.message });
+      setSaving(false);
+      return;
+    }
+
+    // Sync workspace.whatsapp_number so the webhook can identify this workspace
+    const digits = integ.phone_number.replace(/\D+/g, "");
+    const { error: wsError } = await supabase
+      .from("workspaces")
+      .update({ whatsapp_number: digits || null })
+      .eq("id", workspace.id);
+    if (wsError) {
+      setFeedback({ type: "err", msg: wsError.message });
     } else {
       setFeedback({ type: "ok", msg: "Configurações salvas." });
       await load();
