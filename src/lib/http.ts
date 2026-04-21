@@ -91,18 +91,7 @@ export const api = {
   // ---------- Inbox ----------
   async listConversations(): Promise<Conversation[]> {
     const wsId = await requireWorkspaceId();
-    const { data, error } = await supabase
-      .from("conversations")
-      .select(
-        "id, type, name, last_message, last_message_at, status, assigned_to, assignee:profiles!conversations_assigned_to_fkey(id, name)",
-      )
-      .eq("workspace_id", wsId)
-      .order("last_message_at", { ascending: false });
-    if (error) {
-      // The FK alias may not exist; fall back to a manual join.
-      return manualListConversations(wsId);
-    }
-    return (data ?? []).map((r) => mapConversation(r as never));
+    return manualListConversations(wsId);
   },
 
   async listMessages(conversationId: string): Promise<Message[]> {
@@ -243,30 +232,7 @@ export const api = {
   // ---------- Team ----------
   async listUsers(): Promise<TeamMember[]> {
     const wsId = await requireWorkspaceId();
-    const { data, error } = await supabase
-      .from("memberships")
-      .select("id, role, created_at, user_id, profile:profiles!memberships_user_id_fkey(id, name)")
-      .eq("workspace_id", wsId);
-    if (error) {
-      // fallback: fetch memberships then profiles separately
-      return manualListUsers(wsId);
-    }
-    return (data ?? []).map((row: never) => {
-      const r = row as {
-        user_id: string;
-        role: UserRole;
-        created_at: string;
-        profile: { id: string; name: string } | null;
-      };
-      return {
-        id: r.user_id,
-        name: r.profile?.name || "—",
-        email: "",
-        role: r.role,
-        status: "ACTIVE" as const,
-        joinedAt: r.created_at,
-      };
-    });
+    return manualListUsers(wsId);
   },
 
   async inviteUser(email: string, _role: UserRole): Promise<TeamMember> {
