@@ -190,9 +190,9 @@ function SettingsPanel() {
                 <code className="rounded bg-surface-2 px-1">x-webhook-secret</code> com o
                 secret definido acima.
               </p>
-              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
-                ⚠️ Esta URL funciona <strong>somente após publicar o projeto</strong>.
-                Clique em <strong>Publish</strong> no canto superior direito do editor
+              <div className="mt-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
+                ⚠️ Esta URL funciona <strong className="text-foreground">somente após publicar o projeto</strong>.
+                Clique em <strong className="text-foreground">Publish</strong> no canto superior direito do editor
                 antes de configurá-la no Whapi.
               </div>
               <div className="mt-3 break-all rounded border border-border bg-surface-2 px-3 py-2 font-mono text-xs">
