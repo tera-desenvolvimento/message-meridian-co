@@ -100,7 +100,7 @@ function AcceptInvitePage() {
 
   if (loading) {
     return (
-      <AuthShell title="Validando convite..." subtitle="Aguarde um instante." footer={null}>
+      <AuthShell title="Validando convite..." subtitle="Aguarde um instante." footer={<span />}>
         <div className="text-sm text-muted-foreground">Carregando...</div>
       </AuthShell>
     );
@@ -111,7 +111,7 @@ function AcceptInvitePage() {
       <AuthShell
         title="Convite inválido"
         subtitle="Este link não pode ser utilizado."
-        footer={null}
+        footer={<span />}
       >
         <ErrorBox message={loadError ?? "Convite indisponível."} />
       </AuthShell>
@@ -122,7 +122,7 @@ function AcceptInvitePage() {
     <AuthShell
       title={`Você foi convidado para ${info.workspaceName}`}
       subtitle={`Crie sua conta como ${info.role === "ADMIN" ? "Administrador" : "Agente"}. Se já tiver uma conta com este e-mail, informe a senha existente.`}
-      footer={null}
+      footer={<span />}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <ErrorBox message={error} />
