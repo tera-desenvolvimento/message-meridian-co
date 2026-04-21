@@ -25,8 +25,8 @@ export function ConversationList({ conversations, loading, selectedId, onSelect 
   }, [conversations, query]);
 
   return (
-    <aside className="flex h-full w-full flex-col border-r border-border bg-card md:w-[340px] lg:w-[380px]">
-      <div className="border-b border-border p-4">
+    <aside className="flex h-full min-h-0 w-full flex-col border-border bg-card md:w-[340px] md:border-r lg:w-[380px]">
+      <div className="shrink-0 border-b border-border p-4">
         <h1 className="mb-3 text-lg font-semibold tracking-tight">Caixa de entrada</h1>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
