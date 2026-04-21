@@ -18,6 +18,12 @@ function formatStamp(iso: string) {
  */
 export function MessageBlock({ message }: { message: Message }) {
   const isAgent = message.fromMe;
+  // Outgoing messages are sent with a "*Sender Name:*\n" signature prefix so the
+  // recipient on WhatsApp sees who wrote it. Strip it locally to avoid showing
+  // the agent name twice (header + body).
+  const displayContent = isAgent
+    ? message.content.replace(/^\*[^*\n]+:\*\n?/, "")
+    : message.content;
   return (
     <article
       className={cn(
@@ -58,7 +64,7 @@ export function MessageBlock({ message }: { message: Message }) {
       </header>
 
       <div className="pl-8 text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
-        {message.content}
+        {displayContent}
       </div>
     </article>
   );
