@@ -237,16 +237,24 @@ function firstPhoneCandidate(values: unknown[]): { raw: unknown; digits: string 
 async function findSingleEnabledWhapiWorkspace() {
   const { data, error } = await supabaseAdmin
     .from("workspace_integrations")
-    .select("workspace_id, workspaces(id, name, whatsapp_number)")
+    .select("workspace_id")
     .eq("provider", "whapi")
     .eq("enabled", true);
   if (error) console.log("⚠️ Erro buscando fallback de integração:", error);
-  const workspaces = (data ?? []).map((row: any) => row.workspaces).filter(Boolean);
-  if (workspaces.length === 1) {
-    console.log("🎯 Fallback: único workspace Whapi ativo encontrado:", workspaces[0].id);
-    return workspaces[0];
+  const workspaceIds = [...new Set((data ?? []).map((row) => row.workspace_id).filter(Boolean))];
+  if (workspaceIds.length === 1) {
+    const { data: workspace, error: wsErr } = await supabaseAdmin
+      .from("workspaces")
+      .select("id, name, whatsapp_number")
+      .eq("id", workspaceIds[0])
+      .maybeSingle();
+    if (wsErr) console.log("⚠️ Erro carregando workspace fallback:", wsErr);
+    if (workspace) {
+      console.log("🎯 Fallback: único workspace Whapi ativo encontrado:", workspace.id);
+      return workspace;
+    }
   }
-  console.log("🚫 Fallback Whapi não aplicável. Workspaces ativos:", workspaces.length);
+  console.log("🚫 Fallback Whapi não aplicável. Workspaces ativos:", workspaceIds.length);
   return null;
 }
 
