@@ -19,16 +19,11 @@ const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
   { id: "CLOSED", label: "Closed" },
 ];
 
-// Deterministic priority derived from id — placeholder until backend provides it
-function priorityFor(id: string): "low" | "normal" | "high" {
-  const sum = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
-  return (["low", "normal", "high"] as const)[sum % 3];
-}
-
-const priorityBar: Record<"low" | "normal" | "high", string> = {
-  low: "bg-border-strong",
-  normal: "bg-info",
-  high: "bg-destructive",
+const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
+  LOW: "bg-border-strong",
+  NORMAL: "bg-info",
+  HIGH: "bg-warning",
+  URGENT: "bg-destructive",
 };
 
 export function ConversationList({ conversations, loading, selectedId, onSelect }: Props) {
@@ -109,7 +104,7 @@ export function ConversationList({ conversations, loading, selectedId, onSelect 
         ) : (
           <ul>
             {filtered.map((c) => {
-              const prio = priorityFor(c.id);
+              const prio = c.priority;
               const active = selectedId === c.id;
               return (
                 <li key={c.id}>

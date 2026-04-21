@@ -1,5 +1,6 @@
 export type ConversationStatus = "OPEN" | "PENDING" | "CLOSED";
 export type ConversationType = "PRIVATE" | "GROUP";
+export type ConversationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
 export interface Assignee {
   id: string;
@@ -13,6 +14,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageAt: string;
   status: ConversationStatus;
+  priority: ConversationPriority;
   assignedTo: Assignee | null;
 }
 
