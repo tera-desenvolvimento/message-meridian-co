@@ -1,10 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Loader2, Send, UserPlus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Flag,
+  Loader2,
+  MoreHorizontal,
+  Send,
+  UserPlus,
+  Users,
+  User,
+} from "lucide-react";
 import type { Conversation, Message } from "@/lib/types";
 import { api } from "@/lib/http";
-import { Avatar } from "./Avatar";
-import { StatusBadge } from "./StatusBadge";
-import { MessageBubble } from "./MessageBubble";
+import { StatusBadge, TypeTag } from "./StatusBadge";
+import { MessageBlock } from "./MessageBlock";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -16,52 +25,48 @@ interface Props {
   onBack?: () => void;
 }
 
-export function ChatArea({ conversation, messages, loadingMessages, onSent, onAssigned, onBack }: Props) {
+export function ChatArea({
+  conversation,
+  messages,
+  loadingMessages,
+  onSent,
+  onAssigned,
+  onBack,
+}: Props) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change or conversation changes
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages, conversation?.id]);
 
-  // Reset draft when changing conversation
   useEffect(() => {
     setDraft("");
     setError(null);
   }, [conversation?.id]);
 
-  const isGroup = conversation?.type === "GROUP";
-
-  const grouped = useMemo(() => {
-    // Determine which messages need a sender label (groups only, and only when sender changes)
-    return messages.map((m, i) => {
-      const prev = messages[i - 1];
-      const showSender = !!isGroup && !m.fromMe && (!prev || prev.senderName !== m.senderName || prev.fromMe);
-      return { m, showSender };
-    });
-  }, [messages, isGroup]);
-
   if (!conversation) {
     return (
-      <section className="hidden flex-1 items-center justify-center chat-bg md:flex">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Send className="h-7 w-7" />
+      <section className="hidden h-full min-h-0 flex-1 items-center justify-center bg-background md:flex">
+        <div className="max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground">
+            <Send className="h-4 w-4" />
           </div>
-          <h2 className="text-lg font-semibold">Selecione uma conversa</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Suas conversas do WhatsApp aparecerão aqui em tempo real.
+          <h2 className="text-sm font-semibold tracking-tight">No ticket selected</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Pick a conversation from the inbox to start working.
           </p>
         </div>
       </section>
     );
   }
+
+  const isGroup = conversation.type === "GROUP";
 
   async function handleSend() {
     const content = draft.trim();
@@ -73,7 +78,7 @@ export function ChatArea({ conversation, messages, loadingMessages, onSent, onAs
       setDraft("");
       onSent();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao enviar");
+      setError(e instanceof Error ? e.message : "Failed to send");
     } finally {
       setSending(false);
     }
@@ -87,110 +92,207 @@ export function ChatArea({ conversation, messages, loadingMessages, onSent, onAs
       await api.assignConversation(conversation.id);
       onAssigned();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao assumir");
+      setError(e instanceof Error ? e.message : "Failed to assign");
     } finally {
       setAssigning(false);
     }
   }
 
   return (
-    <section key={conversation.id} className="flex h-full min-h-0 w-full flex-col chat-bg animate-in fade-in duration-150">
-      {/* HEADER (fixo no topo) */}
-      <header className="z-10 flex shrink-0 items-center gap-3 border-b border-border bg-card/80 px-3 py-3 backdrop-blur md:px-5 md:py-3.5">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="-ml-1 rounded-full p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground md:hidden"
-            aria-label="Voltar"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        )}
-        <Avatar name={conversation.name} isGroup={isGroup} size={42} />
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <h2 className="truncate text-base font-semibold leading-tight">{conversation.name}</h2>
-            <span className="hidden shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:inline">
-              {isGroup ? "Grupo" : "Privado"}
-            </span>
-            <StatusBadge status={conversation.status} className="hidden shrink-0 sm:inline-flex" />
+    <section className="flex h-full min-h-0 w-full flex-col bg-background">
+      {/* HEADER — panel-style */}
+      <header className="z-10 shrink-0 border-b border-border bg-surface">
+        <div className="flex items-center gap-3 px-4 py-3 md:px-6">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="-ml-1 rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground md:hidden"
+              aria-label="Back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground">
+            {isGroup ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
           </div>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {conversation.assignedTo ? `Atribuída a ${conversation.assignedTo.name}` : "Não atribuída"}
-          </p>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="font-mono text-[10px] text-muted-foreground">
+                #{conversation.id.toUpperCase()}
+              </span>
+              <h2 className="truncate text-[14px] font-semibold tracking-tight">
+                {conversation.name}
+              </h2>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>
+                {conversation.assignedTo ? (
+                  <>
+                    Assigned to{" "}
+                    <span className="font-medium text-foreground/80">
+                      {conversation.assignedTo.name}
+                    </span>
+                  </>
+                ) : (
+                  <span className="italic">Unassigned</span>
+                )}
+              </span>
+              <span className="text-border-strong">•</span>
+              <span>{messages.length} messages</span>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ToolbarButton icon={<Flag className="h-3.5 w-3.5" />} label="Priority" />
+            <ToolbarButton icon={<ChevronDown className="h-3.5 w-3.5" />} label="Status" />
+            <ToolbarButton
+              icon={
+                assigning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5" />
+                )
+              }
+              label="Assign"
+              onClick={handleAssign}
+              disabled={assigning}
+              variant="primary"
+            />
+            <button
+              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground"
+              aria-label="More"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleAssign}
-          disabled={assigning}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60"
-        >
-          {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-          <span className="hidden xs:inline sm:inline">Assumir</span>
-        </button>
+
+        {/* Sub-header: properties strip */}
+        <div className="flex items-center gap-2 border-t border-border bg-surface px-4 py-2 md:px-6">
+          <PropPill label="Status">
+            <StatusBadge status={conversation.status} />
+          </PropPill>
+          <PropPill label="Type">
+            <TypeTag type={conversation.type} />
+          </PropPill>
+          <PropPill label="Channel">
+            <span className="text-[11px] font-medium text-foreground/80">WhatsApp</span>
+          </PropPill>
+        </div>
       </header>
 
-      {/* MENSAGENS (área scrollável) */}
+      {/* MESSAGES — single column blocks */}
       <div
         ref={scrollRef}
-        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 md:px-6 md:py-5"
+        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-4 py-5 md:px-8 md:py-6"
       >
         {loadingMessages && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando mensagens...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading thread…
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Nenhuma mensagem ainda. Envie a primeira!
+          <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
+            No messages yet.
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            {grouped.map(({ m, showSender }, idx) => {
-              const prev = grouped[idx - 1]?.m;
-              const gapTop = prev && prev.fromMe !== m.fromMe ? "mt-2" : "";
-              return (
-                <div key={m.id} className={gapTop}>
-                  <MessageBubble message={m} showSender={showSender} />
-                </div>
-              );
-            })}
+          <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
+            {messages.map((m) => (
+              <MessageBlock key={m.id} message={m} />
+            ))}
           </div>
         )}
       </div>
 
-      {/* INPUT (fixo no rodapé) */}
+      {/* COMPOSER */}
       <div
-        className="shrink-0 border-t border-border bg-card/80 px-3 py-3 backdrop-blur md:px-5"
+        className="shrink-0 border-t border-border bg-surface px-4 py-3 md:px-6"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
-        <div className="flex items-end gap-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            rows={1}
-            placeholder="Digite uma mensagem..."
-            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-3xl border border-border bg-input/70 px-4 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            onClick={handleSend}
-            disabled={sending || !draft.trim()}
-            aria-label="Enviar"
-            className={cn(
-              "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition sm:h-11 sm:w-auto sm:gap-2 sm:px-5",
-              "hover:bg-primary-glow disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-          >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            <span className="hidden sm:inline text-sm font-semibold">Enviar</span>
-          </button>
+        <div className="mx-auto max-w-3xl">
+          {error && <p className="mb-2 text-[12px] text-destructive">{error}</p>}
+          <div className="rounded-md border border-border bg-input/40 transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              rows={2}
+              placeholder="Reply as agent…  (Enter to send, Shift+Enter for newline)"
+              className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
+                  Reply
+                </span>
+                <span className="hidden sm:inline">via WhatsApp</span>
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={sending || !draft.trim()}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
+                  "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+              >
+                {sending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function ToolbarButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  variant = "default",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: "default" | "primary";
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "hidden items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-60 sm:inline-flex",
+        variant === "primary"
+          ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+          : "border-border bg-surface text-foreground/80 hover:border-border-strong hover:bg-surface-2",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function PropPill({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </div>
   );
 }
