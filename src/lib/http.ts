@@ -432,6 +432,38 @@ export const api = {
     return { ok: true };
   },
 
+  async startConversation(
+    phone: string,
+    name: string,
+  ): Promise<{ id: string; name: string; created: boolean }> {
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) throw createAuthRequiredError();
+
+    const res = await fetch("/api/whapi/start-conversation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ phone, name }),
+    });
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // ignore
+    }
+    if (!res.ok) {
+      throw new Error(json?.error || `Falha ao iniciar conversa (HTTP ${res.status})`);
+    }
+    return {
+      id: json.conversation.id,
+      name: json.conversation.name,
+      created: !!json.created,
+    };
+  },
+
   async removeUser(userId: string): Promise<{ ok: true }> {
     const wsId = await requireWorkspaceId();
     const { error } = await supabase
