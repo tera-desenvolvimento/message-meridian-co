@@ -66,6 +66,7 @@ export type Database = {
       }
       memberships: {
         Row: {
+          active: boolean
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
@@ -73,6 +74,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -80,6 +82,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          active?: boolean
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -140,16 +143,19 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           name: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id: string
           name?: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
         }
@@ -224,6 +230,7 @@ export type Database = {
     }
     Functions: {
       current_workspace_id: { Args: never; Returns: string }
+      is_active_member: { Args: { _workspace_id: string }; Returns: boolean }
       is_admin_of: { Args: { _workspace_id: string }; Returns: boolean }
       is_member_of: { Args: { _workspace_id: string }; Returns: boolean }
       shares_workspace_with: { Args: { _user_id: string }; Returns: boolean }
