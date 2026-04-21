@@ -14,10 +14,12 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiWhapiStartConversationRouteImport } from './routes/api/whapi/start-conversation'
 import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
+import { Route as ApiPublicAcceptInviteRouteImport } from './routes/api/public/accept-invite'
 
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
@@ -44,6 +46,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInviteRoute = AcceptInviteRouteImport.update({
+  id: '/accept-invite',
+  path: '/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -65,25 +72,34 @@ const ApiPublicWhapiWebhookRoute = ApiPublicWhapiWebhookRouteImport.update({
   path: '/api/public/whapi-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAcceptInviteRoute = ApiPublicAcceptInviteRouteImport.update({
+  id: '/api/public/accept-invite',
+  path: '/api/public/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
@@ -91,11 +107,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
@@ -104,33 +122,39 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invite'
     | '/login'
     | '/onboarding'
     | '/register'
     | '/settings'
     | '/team'
+    | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invite'
     | '/login'
     | '/onboarding'
     | '/register'
     | '/settings'
     | '/team'
+    | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
   id:
     | '__root__'
     | '/'
+    | '/accept-invite'
     | '/login'
     | '/onboarding'
     | '/register'
     | '/settings'
     | '/team'
+    | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
@@ -138,11 +162,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcceptInviteRoute: typeof AcceptInviteRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
+  ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
@@ -185,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accept-invite': {
+      id: '/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof AcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -213,16 +246,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhapiWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/accept-invite': {
+      id: '/api/public/accept-invite'
+      path: '/api/public/accept-invite'
+      fullPath: '/api/public/accept-invite'
+      preLoaderRoute: typeof ApiPublicAcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcceptInviteRoute: AcceptInviteRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
+  ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
