@@ -110,7 +110,7 @@ function SettingsPanel() {
     setSaving(false);
   }
 
-  const LOVABLE_PROJECT_ID = "b4d9d4b8-7326-4928-873e-3f14d3b34c62";
+  const LOVABLE_PROJECT_ID = "20428e0d-d531-482b-9dcf-3c546ad84bb7";
   const baseWebhookUrl = `https://project--${LOVABLE_PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
   const webhookSecret = integ.webhook_secret.trim();
   const webhookUrl = webhookSecret
