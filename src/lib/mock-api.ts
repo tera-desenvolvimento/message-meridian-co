@@ -188,7 +188,8 @@ async function handle(url: URL, init?: RequestInit): Promise<Response> {
     const u = users.find((x) => x.email.toLowerCase() === (email || "").toLowerCase());
     if (!u || u.password !== password) return jsonResponse({ error: "Credenciais inválidas" }, 401);
     const token = makeToken(u.id);
-    return jsonResponse<AuthResponse>({ token, user: toAuthUser(u) });
+    const res: AuthResponse = { token, user: toAuthUser(u) };
+    return jsonResponse(res);
   }
 
   if (method === "POST" && path === "/auth/register") {
@@ -211,7 +212,8 @@ async function handle(url: URL, init?: RequestInit): Promise<Response> {
     };
     users.push(u);
     const token = makeToken(u.id);
-    return jsonResponse<AuthResponse>({ token, user: toAuthUser(u) });
+    const res: AuthResponse = { token, user: toAuthUser(u) };
+    return jsonResponse(res);
   }
 
   // ---------- AUTHED ----------
