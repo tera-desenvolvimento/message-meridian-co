@@ -23,3 +23,21 @@ export function initials(name: string): string {
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+/**
+ * Formata um chat_id do WhatsApp (ex.: "5511999998888@s.whatsapp.net" ou
+ * um id de grupo "...@g.us") em algo legível.
+ */
+export function formatWhatsappId(externalId: string | null | undefined): string {
+  if (!externalId) return "";
+  if (externalId.includes("@g.us")) return "Grupo";
+  const digits = externalId.split("@")[0]?.replace(/\D/g, "") ?? "";
+  if (!digits) return "";
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    const ddd = digits.slice(2, 4);
+    const rest = digits.slice(4);
+    const half = rest.length - 4;
+    return `+55 ${ddd} ${rest.slice(0, half)}-${rest.slice(half)}`;
+  }
+  return `+${digits}`;
+}
