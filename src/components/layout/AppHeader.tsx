@@ -9,7 +9,7 @@ export function AppHeader() {
   const location = useLocation();
   const path = location.pathname;
 
-  const navItem = (to: "/" | "/team", label: string) => {
+  const navItem = (to: "/" | "/team" | "/settings", label: string) => {
     const active = to === "/" ? path === "/" : path.startsWith(to);
     return (
       <Link
@@ -36,6 +36,7 @@ export function AppHeader() {
         <nav className="flex items-center gap-1">
           {navItem("/", "Inbox")}
           {navItem("/team", "Equipe")}
+          {navItem("/settings", "Configurações")}
         </nav>
       </div>
 
