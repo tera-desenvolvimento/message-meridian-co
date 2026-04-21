@@ -81,6 +81,14 @@ export function ConversationList({
           <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {counts.ALL} tickets
           </span>
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            title="Nova conversa"
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         <div className="relative">
