@@ -1,17 +1,22 @@
 /**
- * AuthProvider — manages JWT, current user, and active workspace.
+ * AuthProvider — wraps Supabase auth.
  *
- * Storage strategy: token persists in localStorage ("crm.token") so reloads
- * stay logged in. The token is otherwise kept in memory and injected into
- * every request via http.ts setTokenProvider. Sensitive data (user, workspace)
- * is fetched from /me + /workspace on boot — never trusted from local storage.
+ * Sessions are persisted by the Supabase client itself (localStorage). We
+ * subscribe to onAuthStateChange BEFORE checking the existing session, then
+ * load the user's profile + active workspace.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { api, setTokenProvider, setUnauthorizedHandler } from "./http";
+import { supabase } from "@/integrations/supabase/client";
+import { api } from "./http";
 import type { AuthUser, Workspace } from "./types";
-
-const TOKEN_KEY = "crm.token";
 
 interface AuthContextValue {
   token: string | null;
@@ -30,107 +35,93 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const tokenRef = useRef<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null,
-  );
-  const [token, setTokenState] = useState<string | null>(tokenRef.current);
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [workspace, setWorkspaceState] = useState<Workspace | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!tokenRef.current);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Wire token + 401 handler into the HTTP layer once.
-  useEffect(() => {
-    setTokenProvider(() => tokenRef.current);
-    setUnauthorizedHandler(() => {
-      tokenRef.current = null;
-      localStorage.removeItem(TOKEN_KEY);
-      setTokenState(null);
-      setUser(null);
-      setWorkspaceState(null);
-      navigate({ to: "/login" });
-    });
-  }, [navigate]);
-
-  const persistToken = useCallback((t: string | null) => {
-    tokenRef.current = t;
-    setTokenState(t);
-    if (typeof window === "undefined") return;
-    if (t) localStorage.setItem(TOKEN_KEY, t);
-    else localStorage.removeItem(TOKEN_KEY);
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (!tokenRef.current) {
-      setUser(null);
-      setWorkspaceState(null);
-      return;
-    }
-    const u = await api.me();
-    setUser(u);
-    if (u.workspaceId) {
-      const ws = await api.getWorkspace();
-      setWorkspaceState(ws);
-    } else {
-      setWorkspaceState(null);
-    }
-  }, []);
-
-  // Bootstrap on mount if token exists.
-  useEffect(() => {
-    let cancelled = false;
-    if (!tokenRef.current) {
-      setLoading(false);
-      return;
-    }
-    (async () => {
-      try {
-        await refresh();
-      } catch {
-        persistToken(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [refresh, persistToken]);
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const res = await api.login(email, password);
-      persistToken(res.token);
-      setUser(res.user);
-      if (res.user.workspaceId) {
+  const loadProfile = useCallback(async () => {
+    try {
+      const u = await api.me();
+      setUser(u);
+      if (u.workspaceId) {
         const ws = await api.getWorkspace();
         setWorkspaceState(ws);
       } else {
         setWorkspaceState(null);
       }
+    } catch {
+      setUser(null);
+      setWorkspaceState(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    // 1) Subscribe FIRST.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setToken(session?.access_token ?? null);
+      if (session?.user) {
+        // Defer profile fetch to avoid running queries inside the callback.
+        setTimeout(() => {
+          if (mounted) void loadProfile();
+        }, 0);
+      } else {
+        setUser(null);
+        setWorkspaceState(null);
+      }
+    });
+
+    // 2) Then check existing session.
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setToken(data.session?.access_token ?? null);
+      if (data.session?.user) {
+        await loadProfile();
+      }
+      setLoading(false);
+    })();
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [loadProfile]);
+
+  const refresh = useCallback(async () => {
+    await loadProfile();
+  }, [loadProfile]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      await api.login(email, password);
+      await loadProfile();
     },
-    [persistToken],
+    [loadProfile],
   );
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
-      const res = await api.register(name, email, password);
-      persistToken(res.token);
-      setUser(res.user);
-      setWorkspaceState(null);
+      await api.register(name, email, password);
+      await loadProfile();
     },
-    [persistToken],
+    [loadProfile],
   );
 
-  const logout = useCallback(() => {
-    persistToken(null);
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setToken(null);
     setUser(null);
     setWorkspaceState(null);
     navigate({ to: "/login" });
-  }, [persistToken, navigate]);
+  }, [navigate]);
 
   const setWorkspace = useCallback((ws: Workspace) => {
     setWorkspaceState(ws);
-    setUser((u) => (u ? { ...u, workspaceId: ws.id } : u));
+    setUser((u) => (u ? { ...u, workspaceId: ws.id, role: "ADMIN" } : u));
   }, []);
 
   const value = useMemo<AuthContextValue>(
