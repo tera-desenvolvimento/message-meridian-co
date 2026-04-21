@@ -151,6 +151,10 @@ function Inbox() {
           onAssigned={() => {
             void refreshConversations();
           }}
+          onDeleted={() => {
+            setSelectedId(null);
+            void refreshConversations();
+          }}
           onBack={() => setSelectedId(null)}
         />
       </div>
