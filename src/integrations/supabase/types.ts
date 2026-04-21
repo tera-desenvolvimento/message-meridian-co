@@ -152,6 +152,45 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_integrations: {
+        Row: {
+          api_url: string
+          created_at: string
+          enabled: boolean
+          id: string
+          phone_number: string | null
+          provider: string
+          token: string | null
+          updated_at: string
+          webhook_secret: string | null
+          workspace_id: string
+        }
+        Insert: {
+          api_url?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          phone_number?: string | null
+          provider?: string
+          token?: string | null
+          updated_at?: string
+          webhook_secret?: string | null
+          workspace_id: string
+        }
+        Update: {
+          api_url?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          phone_number?: string | null
+          provider?: string
+          token?: string | null
+          updated_at?: string
+          webhook_secret?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           created_at: string
