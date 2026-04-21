@@ -23,6 +23,7 @@ export type Database = {
           last_message: string
           last_message_at: string
           name: string
+          priority: Database["public"]["Enums"]["conversation_priority"]
           status: Database["public"]["Enums"]["conversation_status"]
           type: Database["public"]["Enums"]["conversation_type"]
           workspace_id: string
@@ -35,6 +36,7 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           name: string
+          priority?: Database["public"]["Enums"]["conversation_priority"]
           status?: Database["public"]["Enums"]["conversation_status"]
           type?: Database["public"]["Enums"]["conversation_type"]
           workspace_id: string
@@ -47,6 +49,7 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           name?: string
+          priority?: Database["public"]["Enums"]["conversation_priority"]
           status?: Database["public"]["Enums"]["conversation_status"]
           type?: Database["public"]["Enums"]["conversation_type"]
           workspace_id?: string
@@ -226,6 +229,7 @@ export type Database = {
       shares_workspace_with: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      conversation_priority: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       conversation_status: "OPEN" | "PENDING" | "CLOSED"
       conversation_type: "PRIVATE" | "GROUP"
       user_role: "ADMIN" | "AGENT"
@@ -356,6 +360,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      conversation_priority: ["LOW", "NORMAL", "HIGH", "URGENT"],
       conversation_status: ["OPEN", "PENDING", "CLOSED"],
       conversation_type: ["PRIVATE", "GROUP"],
       user_role: ["ADMIN", "AGENT"],
