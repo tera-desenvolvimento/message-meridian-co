@@ -54,6 +54,7 @@ function mapConversation(row: {
   id: string;
   type: "PRIVATE" | "GROUP";
   name: string;
+  external_id?: string | null;
   last_message: string;
   last_message_at: string;
   status: "OPEN" | "PENDING" | "CLOSED";
@@ -65,6 +66,7 @@ function mapConversation(row: {
     id: row.id,
     type: row.type,
     name: row.name,
+    externalId: row.external_id ?? null,
     lastMessage: row.last_message,
     lastMessageAt: row.last_message_at,
     status: row.status,
@@ -169,7 +171,7 @@ export const api = {
       .update({ assigned_to: uid, status: "OPEN" })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -187,7 +189,7 @@ export const api = {
       .update({ assigned_to: null })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -203,7 +205,7 @@ export const api = {
       .update({ status })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -228,7 +230,7 @@ export const api = {
       .update({ priority })
       .eq("id", conversationId)
       .select(
-        "id, type, name, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
       )
       .single();
     if (error) throw error;
@@ -481,7 +483,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, last_message, last_message_at, status, priority, assigned_to")
+    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;

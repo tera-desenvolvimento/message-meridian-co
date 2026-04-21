@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Search, User, Users, Inbox, Filter, Plus, Loader2 } from "lucide-react";
+import { Search, User, Users, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
 import type { Conversation, ConversationStatus } from "@/lib/types";
-import { formatRelative } from "@/lib/format";
+import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
@@ -38,6 +38,22 @@ const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
   NORMAL: "bg-info",
   HIGH: "bg-warning",
   URGENT: "bg-destructive",
+};
+
+const priorityFlag: Record<
+  "LOW" | "NORMAL" | "HIGH" | "URGENT",
+  { label: string; className: string } | null
+> = {
+  LOW: null,
+  NORMAL: null,
+  HIGH: {
+    label: "High",
+    className: "border-warning/40 bg-warning/10 text-warning",
+  },
+  URGENT: {
+    label: "Urgent",
+    className: "border-destructive/40 bg-destructive/10 text-destructive",
+  },
 };
 
 export function ConversationList({
@@ -160,8 +176,8 @@ export function ConversationList({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            #{c.id.toUpperCase()}
+                          <span className="truncate font-mono text-[10px] text-muted-foreground">
+                            {formatWhatsappId(c.externalId) || `#${c.id.slice(0, 8).toUpperCase()}`}
                           </span>
                           <span className="truncate text-[13px] font-semibold text-foreground">
                             {c.name}
@@ -179,6 +195,17 @@ export function ConversationList({
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <StatusBadge status={c.status} />
                         <TypeTag type={c.type} />
+                        {priorityFlag[prio] && (
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                              priorityFlag[prio]!.className,
+                            )}
+                          >
+                            <Flag className="h-2.5 w-2.5" />
+                            {priorityFlag[prio]!.label}
+                          </span>
+                        )}
                         <span className="ml-auto truncate text-[11px] text-muted-foreground">
                           {c.assignedTo ? (
                             <>
