@@ -40,9 +40,16 @@ const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
   URGENT: "bg-destructive",
 };
 
-export function ConversationList({ conversations, loading, selectedId, onSelect }: Props) {
+export function ConversationList({
+  conversations,
+  loading,
+  selectedId,
+  onSelect,
+  onConversationCreated,
+}: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  const [newOpen, setNewOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
