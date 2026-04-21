@@ -195,8 +195,9 @@ export function ChatArea({
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="font-mono text-[10px] text-muted-foreground">
-                #{conversation.id.toUpperCase()}
+              <span className="truncate font-mono text-[10px] text-muted-foreground">
+                {formatWhatsappId(conversation.externalId) ||
+                  `#${conversation.id.slice(0, 8).toUpperCase()}`}
               </span>
               <h2 className="truncate text-[14px] font-semibold tracking-tight">
                 {conversation.name}
