@@ -15,6 +15,7 @@ function formatStamp(iso: string) {
 /**
  * Single-column message block (CRM ticket-style — not a chat bubble).
  * Internal notes (fromMe) get a subtle accent edge to differentiate without mirroring the layout.
+ * Renders inline media (images/video/audio) when the message carries a media URL.
  */
 export function MessageBlock({ message }: { message: Message }) {
   const isAgent = message.fromMe;
@@ -24,6 +25,11 @@ export function MessageBlock({ message }: { message: Message }) {
   const displayContent = isAgent
     ? message.content.replace(/^\*[^*\n]+:\*\n?/, "")
     : message.content;
+
+  const mediaType = message.mediaType ?? null;
+  const mediaUrl = message.mediaUrl ?? null;
+  const mimeType = message.mediaMimeType ?? undefined;
+
   return (
     <article
       className={cn(
@@ -62,8 +68,54 @@ export function MessageBlock({ message }: { message: Message }) {
         </span>
       </header>
 
-      <div className="pl-8 text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
-        {displayContent}
+      <div className="space-y-2 pl-8">
+        {mediaUrl && mediaType === "image" && (
+          <a
+            href={mediaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block max-w-sm overflow-hidden rounded-md border border-border bg-background"
+          >
+            <img
+              src={mediaUrl}
+              alt={displayContent || "Imagem recebida"}
+              className="h-auto w-full object-cover"
+              loading="lazy"
+            />
+          </a>
+        )}
+
+        {mediaUrl && mediaType === "video" && (
+          <video
+            src={mediaUrl}
+            controls
+            className="max-w-sm rounded-md border border-border bg-background"
+          />
+        )}
+
+        {mediaUrl && mediaType === "audio" && (
+          <audio src={mediaUrl} controls className="w-full max-w-sm" />
+        )}
+
+        {mediaUrl && (mediaType === "document" || mediaType === "sticker") && (
+          <a
+            href={mediaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-[13px] text-foreground/90 hover:bg-surface"
+          >
+            📎 {mediaType === "sticker" ? "Sticker" : "Abrir documento"}
+            {mimeType && (
+              <span className="text-[11px] text-muted-foreground">({mimeType})</span>
+            )}
+          </a>
+        )}
+
+        {displayContent && (
+          <div className="text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
+            {displayContent}
+          </div>
+        )}
       </div>
     </article>
   );

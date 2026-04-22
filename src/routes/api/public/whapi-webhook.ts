@@ -200,11 +200,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 ? null // não usar avatar do remetente (nós) para a conversa do contato
                 : senderAvatar;
 
+            // Extract media (image, video, audio, document, sticker) URL/metadata from Whapi payload.
+            // Whapi typically exposes the media object under msg[<type>] with `link` (CDN URL),
+            // `mime_type` and a `caption` for visual media. We persist the link so the UI can render it.
+            const mediaInfo = extractMedia(msg);
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
               msg?.image?.caption ||
-              `[${msg?.type || "mensagem"}]`;
+              msg?.video?.caption ||
+              msg?.document?.caption ||
+              (mediaInfo ? "" : `[${msg?.type || "mensagem"}]`);
             const externalMsgId: string | undefined = msg?.id;
 
             console.log("🔎 Buscando conversa...", {
@@ -252,6 +259,9 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 sender_phone: contactDigits || null,
                 sender_avatar_url: senderAvatar,
                 external_id: externalMsgId ?? null,
+                media_url: mediaInfo?.url ?? null,
+                media_mime_type: mediaInfo?.mimeType ?? null,
+                media_type: mediaInfo?.type ?? null,
               })
               .select("id")
               .maybeSingle();
@@ -298,6 +308,33 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
 function digitsOnly(v: unknown): string {
   if (!v) return "";
   return String(v).replace(/\D+/g, "");
+}
+
+/**
+ * Extracts media (image, video, audio, document, sticker) info from a Whapi
+ * message payload. Whapi exposes media under msg[<type>] with `link` (signed
+ * CDN URL) and `mime_type`. Returns null when there's no media URL.
+ */
+function extractMedia(msg: any): { url: string; mimeType: string | null; type: string } | null {
+  const candidates: Array<{ key: string; type: string }> = [
+    { key: "image", type: "image" },
+    { key: "video", type: "video" },
+    { key: "audio", type: "audio" },
+    { key: "voice", type: "audio" },
+    { key: "ptt", type: "audio" },
+    { key: "document", type: "document" },
+    { key: "sticker", type: "image" },
+  ];
+  for (const { key, type } of candidates) {
+    const node = msg?.[key];
+    if (!node) continue;
+    const url: string | undefined =
+      node.link || node.url || node.preview_url || node.thumbnail_url;
+    if (typeof url === "string" && url.startsWith("http")) {
+      return { url, mimeType: node.mime_type ?? node.mimetype ?? null, type };
+    }
+  }
+  return null;
 }
 
 function firstPhoneCandidate(values: unknown[]): { raw: unknown; digits: string } | null {

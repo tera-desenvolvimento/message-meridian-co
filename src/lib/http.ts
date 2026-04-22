@@ -87,7 +87,11 @@ function mapMessage(row: {
   sender_name: string;
   sender_avatar_url?: string | null;
   created_at: string;
+  media_url?: string | null;
+  media_mime_type?: string | null;
+  media_type?: string | null;
 }): Message {
+  const mediaType = (row.media_type ?? null) as Message["mediaType"];
   return {
     id: row.id,
     conversationId: row.conversation_id,
@@ -96,9 +100,15 @@ function mapMessage(row: {
     senderName: row.sender_name,
     senderAvatarUrl: row.sender_avatar_url ?? null,
     createdAt: row.created_at,
-    type: "text",
+    type: mediaType === "image" ? "image" : mediaType === "audio" ? "audio" : "text",
+    mediaUrl: row.media_url ?? null,
+    mediaMimeType: row.media_mime_type ?? null,
+    mediaType,
   };
 }
+
+const MESSAGE_COLUMNS =
+  "id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at, media_url, media_mime_type, media_type";
 
 // ----- API surface -----
 
@@ -112,7 +122,7 @@ export const api = {
   async listMessages(conversationId: string): Promise<Message[]> {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
+      .select(MESSAGE_COLUMNS)
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -149,7 +159,7 @@ export const api = {
       // Webhook already inserted the echo; fetch the most recent outgoing message.
       const { data } = await supabase
         .from("messages")
-        .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
+        .select(MESSAGE_COLUMNS)
         .eq("conversation_id", conversationId)
         .eq("from_me", true)
         .order("created_at", { ascending: false })
@@ -168,6 +178,9 @@ export const api = {
       senderAvatarUrl: m.senderAvatarUrl ?? null,
       createdAt: m.createdAt,
       type: "text",
+      mediaUrl: null,
+      mediaMimeType: null,
+      mediaType: null,
     };
   },
 
