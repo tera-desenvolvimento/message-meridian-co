@@ -384,7 +384,7 @@ export function ConversationList({
                         {c.awaitingReplySince && c.status !== "CLOSED" && (
                           <WaitingTimer since={c.awaitingReplySince} />
                         )}
-                        <span className="ml-auto truncate text-[11px] text-muted-foreground">
+                        <span className="ml-auto min-w-0 truncate text-[11px] text-muted-foreground">
                           {c.assignedTo ? (
                             <>
                               <span className="text-muted-foreground/70">→ </span>
