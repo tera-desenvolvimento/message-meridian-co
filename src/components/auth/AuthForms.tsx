@@ -130,6 +130,14 @@ export function LoginForm() {
       <PrimaryButton type="submit" disabled={submitting}>
         {submitting ? "Entrando..." : "Entrar"}
       </PrimaryButton>
+      <div className="text-center">
+        <Link
+          to="/forgot-password"
+          className="text-xs font-medium text-muted-foreground hover:text-primary hover:underline"
+        >
+          Esqueci minha senha
+        </Link>
+      </div>
     </form>
   );
 }
