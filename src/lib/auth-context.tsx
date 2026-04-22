@@ -60,15 +60,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     // 1) Subscribe FIRST.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       setToken(session?.access_token ?? null);
-      if (session?.user) {
-        // Defer profile fetch to avoid running queries inside the callback.
-        setTimeout(() => {
-          if (mounted) void loadProfile();
-        }, 0);
-      } else {
+
+      // Only reload the profile on events that actually change the user
+      // identity. TOKEN_REFRESHED / INITIAL_SESSION fire frequently (once
+      // per minute and on every tab focus) and would otherwise trigger 3
+      // network round-trips that block route navigation.
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        if (session?.user) {
+          setTimeout(() => {
+            if (mounted) void loadProfile();
+          }, 0);
+        }
+      } else if (event === "SIGNED_OUT") {
         setUser(null);
         setWorkspaceState(null);
       }
