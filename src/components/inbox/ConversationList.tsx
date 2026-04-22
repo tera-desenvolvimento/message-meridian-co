@@ -488,3 +488,23 @@ function ListSkeleton() {
     </ul>
   );
 }
+
+function AgentFilterItem({
+  label,
+  count,
+  active,
+  onSelect,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <DropdownMenuItem onSelect={onSelect} className="flex items-center gap-2">
+      <span className="flex-1 truncate">{label}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
+      {active && <Check className="h-3.5 w-3.5 text-primary" />}
+    </DropdownMenuItem>
+  );
+}
