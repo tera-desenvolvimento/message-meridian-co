@@ -178,7 +178,7 @@ export const api = {
       .update({ assigned_to: uid, status: "OPEN" })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -196,7 +196,7 @@ export const api = {
       .update({ assigned_to: null })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -212,7 +212,7 @@ export const api = {
       .update({ status })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -237,7 +237,7 @@ export const api = {
       .update({ priority })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -545,7 +545,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to")
+    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
