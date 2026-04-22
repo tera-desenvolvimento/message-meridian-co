@@ -455,6 +455,15 @@ export function ChatArea({
       >
         <div className="mx-auto max-w-3xl">
           {error && <p className="mb-2 text-[12px] text-destructive">{error}</p>}
+          {!conversation.assignedTo && (
+            <div className="mb-2 flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning">
+              <UserPlus className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Esta conversa está <strong>sem agente</strong>. Ao enviar uma mensagem
+                ela será atribuída automaticamente a você.
+              </span>
+            </div>
+          )}
           <div className="rounded-md border border-border bg-input/40 transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
             <textarea
               value={draft}
@@ -466,7 +475,11 @@ export function ChatArea({
                 }
               }}
               rows={2}
-              placeholder="Responder como agente…  (Enter para enviar, Shift+Enter para nova linha)"
+              placeholder={
+                conversation.assignedTo
+                  ? "Responder como agente…  (Enter para enviar, Shift+Enter para nova linha)"
+                  : "Digite para assumir esta conversa e responder…"
+              }
               className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
