@@ -204,7 +204,7 @@ export function ChatArea({
     <section className="flex h-full min-h-0 w-full flex-col bg-background">
       {/* HEADER */}
       <header className="z-10 shrink-0 border-b border-border bg-surface">
-        <div className="flex items-center gap-3 px-4 py-3 md:px-6">
+        <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 md:px-6">
           {onBack && (
             <button
               onClick={onBack}
