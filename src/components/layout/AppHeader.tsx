@@ -1,10 +1,15 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Moon, Sun } from "lucide-react";
+import { Inbox, LogOut, Moon, Settings as SettingsIcon, Sun, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
+import { cn } from "@/lib/utils";
 
 /**
  * Top app bar shown on authenticated pages. Workspace identity + nav + logout.
+ *
+ * Em telas pequenas, a navegação aparece como ícones para economizar espaço,
+ * e o e-mail/role do usuário fica oculto. O nome do workspace é truncado para
+ * evitar quebras de layout.
  */
 export function AppHeader() {
   const { user, workspace, logout } = useAuth();
@@ -12,40 +17,58 @@ export function AppHeader() {
   const location = useLocation();
   const path = location.pathname;
 
-  const navItem = (to: "/" | "/team" | "/settings", label: string) => {
-    const active = to === "/" ? path === "/" : path.startsWith(to);
-    return (
-      <Link
-        to={to}
-        className={`relative inline-flex h-9 items-center px-3 text-xs font-medium transition ${
-          active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        {label}
-        {active && <span className="absolute -bottom-px left-2 right-2 h-0.5 rounded bg-primary" />}
-      </Link>
-    );
-  };
+  const items: {
+    to: "/" | "/team" | "/settings";
+    label: string;
+    icon: typeof Inbox;
+  }[] = [
+    { to: "/", label: "Caixa de entrada", icon: Inbox },
+    { to: "/team", label: "Equipe", icon: Users },
+    { to: "/settings", label: "Configurações", icon: SettingsIcon },
+  ];
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-surface px-4">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground text-[11px] font-bold">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 sm:px-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground text-[11px] font-bold">
             {workspace?.name?.[0]?.toUpperCase() ?? "C"}
           </div>
-          <span className="text-sm font-semibold tracking-tight">{workspace?.name ?? "Crmly"}</span>
+          <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
+            {workspace?.name ?? "Crmly"}
+          </span>
         </div>
-        <nav className="flex items-center gap-1">
-          {navItem("/", "Caixa de entrada")}
-          {navItem("/team", "Equipe")}
-          {navItem("/settings", "Configurações")}
+        <nav className="flex items-center gap-0.5 sm:gap-1">
+          {items.map((item) => {
+            const active = item.to === "/" ? path === "/" : path.startsWith(item.to);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                title={item.label}
+                aria-label={item.label}
+                className={cn(
+                  "relative inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition sm:px-3",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">{item.label}</span>
+                {active && (
+                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-primary" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="hidden text-right sm:block">
-          <div className="text-xs font-medium text-foreground leading-tight">{user?.name}</div>
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="hidden text-right md:block">
+          <div className="text-xs font-medium leading-tight text-foreground">{user?.name}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {user?.role === "ADMIN" ? "Admin" : "Agente"}
           </div>
@@ -60,9 +83,12 @@ export function AppHeader() {
         </button>
         <button
           onClick={logout}
-          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-border-strong hover:text-foreground"
+          title="Sair"
+          aria-label="Sair"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 text-xs font-medium text-muted-foreground transition hover:border-border-strong hover:text-foreground sm:px-3"
         >
-          Sair
+          <LogOut className="h-3.5 w-3.5 sm:hidden" />
+          <span className="hidden sm:inline">Sair</span>
         </button>
       </div>
     </header>
