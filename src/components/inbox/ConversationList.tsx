@@ -77,6 +77,7 @@ export function ConversationList({
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  const [tab, setTab] = useState<"ALL" | ConversationType>("ALL");
   // "ALL" = todos, "ME" = atribuídas a mim, "UNASSIGNED" = sem agente,
   // ou um userId específico de outro agente.
   const [agentFilter, setAgentFilter] = useState<string>("ALL");
@@ -97,9 +98,16 @@ export function ConversationList({
     };
   }, []);
 
+  // Conversas filtradas pela aba (tipo) — usadas para a lista e para os
+  // contadores de status/agente, para que os números reflitam a aba ativa.
+  const tabScoped = useMemo(() => {
+    if (tab === "ALL") return conversations;
+    return conversations.filter((c) => c.type === tab);
+  }, [conversations, tab]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return conversations.filter((c) => {
+    return tabScoped.filter((c) => {
       if (filter !== "ALL" && c.status !== filter) return false;
       if (agentFilter === "ME") {
         if (c.assignedTo?.id !== user?.id) return false;
@@ -111,16 +119,24 @@ export function ConversationList({
       if (!q) return true;
       return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
     });
-  }, [conversations, query, filter, agentFilter, user?.id]);
+  }, [tabScoped, query, filter, agentFilter, user?.id]);
+
+  const tabCounts = useMemo(() => {
+    return {
+      ALL: conversations.length,
+      PRIVATE: conversations.filter((c) => c.type === "PRIVATE").length,
+      GROUP: conversations.filter((c) => c.type === "GROUP").length,
+    };
+  }, [conversations]);
 
   const counts = useMemo(() => {
     return {
-      ALL: conversations.length,
-      OPEN: conversations.filter((c) => c.status === "OPEN").length,
-      PENDING: conversations.filter((c) => c.status === "PENDING").length,
-      CLOSED: conversations.filter((c) => c.status === "CLOSED").length,
+      ALL: tabScoped.length,
+      OPEN: tabScoped.filter((c) => c.status === "OPEN").length,
+      PENDING: tabScoped.filter((c) => c.status === "PENDING").length,
+      CLOSED: tabScoped.filter((c) => c.status === "CLOSED").length,
     };
-  }, [conversations]);
+  }, [tabScoped]);
 
   const agentCounts = useMemo(() => {
     const byAgent: Record<string, number> = {};
