@@ -142,7 +142,7 @@ export function ConversationList({
     const byAgent: Record<string, number> = {};
     let unassigned = 0;
     let mine = 0;
-    for (const c of conversations) {
+    for (const c of tabScoped) {
       if (!c.assignedTo) {
         unassigned++;
       } else {
@@ -151,7 +151,7 @@ export function ConversationList({
       }
     }
     return { byAgent, unassigned, mine };
-  }, [conversations, user?.id]);
+  }, [tabScoped, user?.id]);
 
   const agentFilterLabel = useMemo(() => {
     if (agentFilter === "ALL") return "Todos os agentes";
