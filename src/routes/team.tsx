@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Pencil, UserCog } from "lucide-react";
+import { Check, Copy, KeyRound, Pencil, UserCog } from "lucide-react";
 import { api } from "@/lib/http";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/AuthGuard";
