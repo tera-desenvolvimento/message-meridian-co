@@ -8,7 +8,7 @@ const map: Record<ConversationStatus, { label: string; cls: string; dot: string 
     dot: "bg-success",
   },
   PENDING: {
-    label: "Pending",
+    label: "Aguardando atendimento",
     cls: "bg-warning/10 text-warning border-warning/30",
     dot: "bg-warning",
   },

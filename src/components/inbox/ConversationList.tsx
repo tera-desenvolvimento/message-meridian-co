@@ -39,7 +39,7 @@ interface Props {
 const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
   { id: "ALL", label: "All" },
   { id: "OPEN", label: "Open" },
-  { id: "PENDING", label: "Pending" },
+  { id: "PENDING", label: "Aguardando atendimento" },
   { id: "CLOSED", label: "Closed" },
 ];
 

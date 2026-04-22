@@ -55,7 +55,7 @@ interface Props {
 
 const STATUS_OPTIONS: { value: ConversationStatus; label: string }[] = [
   { value: "OPEN", label: "Open" },
-  { value: "PENDING", label: "Pending" },
+  { value: "PENDING", label: "Aguardando atendimento" },
   { value: "CLOSED", label: "Closed" },
 ];
 
