@@ -209,12 +209,14 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
             });
             console.log("💬 CONVERSA:", { id: conversationId });
 
-            // Best-effort: fetch profile picture from Whapi if we don't have one yet
-            if (!fromMe && integ?.enabled !== false) {
+            // Best-effort: fetch profile picture from Whapi if we don't have one yet.
+            // Runs for groups and private chats (regardless of fromMe).
+            if (integ?.enabled !== false) {
               void maybeFetchProfilePic({
                 conversationId,
                 chatId,
                 workspaceId: workspace.id,
+                isGroup,
               });
             }
 
