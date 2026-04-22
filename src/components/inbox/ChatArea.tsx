@@ -457,7 +457,7 @@ export function ChatArea({
         </div>
 
         {/* Sub-header: properties strip */}
-        <div className="flex items-center gap-2 border-t border-border bg-surface px-4 py-2 md:px-6">
+        <div className="scrollbar-thin flex items-center gap-3 overflow-x-auto border-t border-border bg-surface px-3 py-2 sm:px-4 md:px-6">
           <PropPill label="Status">
             <StatusBadge status={conversation.status} />
           </PropPill>
