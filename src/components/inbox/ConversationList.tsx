@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
-import { Search, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
-import type { Conversation, ConversationStatus } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check } from "lucide-react";
+import type { Conversation, ConversationStatus, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { ContactAvatar } from "./ContactAvatar";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
