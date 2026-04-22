@@ -406,8 +406,11 @@ async function upsertConversation(params: {
   if (existing) {
     console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
     const updates: { name?: string; avatar_url?: string; avatar_updated_at?: string } = {};
-    if (isGroup && name && shouldReplaceGroupName(existing.name)) {
-      updates.name = name;
+    if (name) {
+      const canReplace = isGroup
+        ? shouldReplaceGroupName(existing.name)
+        : shouldReplaceContactName(existing.name);
+      if (canReplace) updates.name = name;
     }
     if (avatarUrl && !existing.avatar_url) {
       updates.avatar_url = avatarUrl;
