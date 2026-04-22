@@ -17,6 +17,8 @@ export type Database = {
       conversations: {
         Row: {
           assigned_to: string | null
+          avatar_updated_at: string | null
+          avatar_url: string | null
           created_at: string
           external_id: string | null
           id: string
@@ -30,6 +32,8 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          avatar_updated_at?: string | null
+          avatar_url?: string | null
           created_at?: string
           external_id?: string | null
           id?: string
@@ -43,6 +47,8 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          avatar_updated_at?: string | null
+          avatar_url?: string | null
           created_at?: string
           external_id?: string | null
           id?: string
@@ -241,6 +247,7 @@ export type Database = {
           external_id: string | null
           from_me: boolean
           id: string
+          sender_avatar_url: string | null
           sender_name: string
           sender_phone: string | null
         }
@@ -251,6 +258,7 @@ export type Database = {
           external_id?: string | null
           from_me?: boolean
           id?: string
+          sender_avatar_url?: string | null
           sender_name?: string
           sender_phone?: string | null
         }
@@ -261,6 +269,7 @@ export type Database = {
           external_id?: string | null
           from_me?: boolean
           id?: string
+          sender_avatar_url?: string | null
           sender_name?: string
           sender_phone?: string | null
         }

@@ -10,8 +10,6 @@ import {
   Trash2,
   UserMinus,
   UserPlus,
-  Users,
-  User,
 } from "lucide-react";
 import type {
   Conversation,
@@ -24,6 +22,7 @@ import { api } from "@/lib/http";
 import { formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { MessageBlock } from "./MessageBlock";
+import { ContactAvatar } from "./ContactAvatar";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -190,9 +189,12 @@ export function ChatArea({
             </button>
           )}
 
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground">
-            {isGroup ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
-          </div>
+          <ContactAvatar
+            src={conversation.avatarUrl}
+            name={conversation.name}
+            isGroup={isGroup}
+            size="lg"
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">

@@ -62,6 +62,7 @@ function mapConversation(row: {
   status: "OPEN" | "PENDING" | "CLOSED";
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   assigned_to: string | null;
+  avatar_url?: string | null;
   assignee?: { id: string; name: string } | null;
 }): Conversation {
   return {
@@ -74,6 +75,7 @@ function mapConversation(row: {
     status: row.status,
     priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
+    avatarUrl: row.avatar_url ?? null,
   };
 }
 
@@ -83,6 +85,7 @@ function mapMessage(row: {
   content: string;
   from_me: boolean;
   sender_name: string;
+  sender_avatar_url?: string | null;
   created_at: string;
 }): Message {
   return {
@@ -91,6 +94,7 @@ function mapMessage(row: {
     content: row.content,
     fromMe: row.from_me,
     senderName: row.sender_name,
+    senderAvatarUrl: row.sender_avatar_url ?? null,
     createdAt: row.created_at,
     type: "text",
   };
@@ -108,7 +112,7 @@ export const api = {
   async listMessages(conversationId: string): Promise<Message[]> {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, conversation_id, content, from_me, sender_name, created_at")
+      .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -145,7 +149,7 @@ export const api = {
       // Webhook already inserted the echo; fetch the most recent outgoing message.
       const { data } = await supabase
         .from("messages")
-        .select("id, conversation_id, content, from_me, sender_name, created_at")
+        .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
         .eq("conversation_id", conversationId)
         .eq("from_me", true)
         .order("created_at", { ascending: false })
@@ -161,6 +165,7 @@ export const api = {
       content: m.content,
       fromMe: m.fromMe,
       senderName: m.senderName,
+      senderAvatarUrl: m.senderAvatarUrl ?? null,
       createdAt: m.createdAt,
       type: "text",
     };
@@ -173,7 +178,7 @@ export const api = {
       .update({ assigned_to: uid, status: "OPEN" })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -191,7 +196,7 @@ export const api = {
       .update({ assigned_to: null })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -207,7 +212,7 @@ export const api = {
       .update({ status })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -232,7 +237,7 @@ export const api = {
       .update({ priority })
       .eq("id", conversationId)
       .select(
-        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to",
+        "id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url",
       )
       .single();
     if (error) throw error;
@@ -540,7 +545,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to")
+    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;

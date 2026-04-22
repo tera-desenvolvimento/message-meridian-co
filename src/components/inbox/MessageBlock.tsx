@@ -1,6 +1,6 @@
 import type { Message } from "@/lib/types";
-import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ContactAvatar } from "./ContactAvatar";
 
 function formatStamp(iso: string) {
   const d = new Date(iso);
@@ -42,16 +42,15 @@ export function MessageBlock({ message }: { message: Message }) {
       />
 
       <header className="mb-1.5 flex items-center gap-2">
-        <div
+        <ContactAvatar
+          src={message.senderAvatarUrl}
+          name={message.senderName || "?"}
+          size="sm"
           className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold",
-            isAgent
-              ? "bg-primary/15 text-primary"
-              : "bg-surface-2 text-muted-foreground",
+            "h-6 w-6 text-[10px]",
+            isAgent && "border-primary/30",
           )}
-        >
-          {initials(message.senderName) || "?"}
-        </div>
+        />
         <span className="text-[13px] font-semibold text-foreground">{message.senderName}</span>
         {isAgent && (
           <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">

@@ -174,6 +174,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               ? msg?.chat_name || payload?.chat?.name || null
               : msg?.from_name || msg?.push_name || msg?.chat_name || (contactDigits ? `+${contactDigits}` : "Contato");
 
+            // Profile picture (avatar) — Whapi sometimes includes these inline
+            const senderAvatar: string | null =
+              msg?.from_image ||
+              msg?.from_picture ||
+              msg?.profile_picture ||
+              msg?.profile_pic ||
+              msg?.image ||
+              null;
+            const conversationAvatar: string | null = isGroup
+              ? msg?.chat_image || msg?.chat_picture || payload?.chat?.image || null
+              : senderAvatar;
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
@@ -193,8 +205,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               externalId: chatId,
               isGroup,
               name: conversationName,
+              avatarUrl: conversationAvatar,
             });
             console.log("💬 CONVERSA:", { id: conversationId });
+
+            // Best-effort: fetch profile picture from Whapi if we don't have one yet
+            if (!fromMe && integ?.enabled !== false) {
+              void maybeFetchProfilePic({
+                conversationId,
+                chatId,
+                workspaceId: workspace.id,
+              });
+            }
 
             console.log("💾 Salvando mensagem...", {
               conversationId,
@@ -212,6 +234,7 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 from_me: fromMe,
                 sender_name: senderName,
                 sender_phone: contactDigits || null,
+                sender_avatar_url: senderAvatar,
                 external_id: externalMsgId ?? null,
               })
               .select("id")
@@ -354,26 +377,33 @@ async function upsertConversation(params: {
   externalId: string;
   isGroup: boolean;
   name: string | null;
+  avatarUrl?: string | null;
 }) {
-  const { workspaceId, externalId, isGroup, name } = params;
+  const { workspaceId, externalId, isGroup, name, avatarUrl } = params;
   const { data: existing, error: selErr } = await supabaseAdmin
     .from("conversations")
-    .select("id, name")
+    .select("id, name, avatar_url")
     .eq("workspace_id", workspaceId)
     .eq("external_id", externalId)
     .maybeSingle();
   if (selErr) console.log("⚠️ Erro buscando conversa:", selErr);
   if (existing) {
     console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
-    // Para grupos: atualizar o nome apenas se recebemos um nome real e o nome
-    // atual é placeholder. NUNCA sobrescrever nome de grupo com nome de remetente.
+    const updates: { name?: string; avatar_url?: string; avatar_updated_at?: string } = {};
     if (isGroup && name && shouldReplaceGroupName(existing.name)) {
+      updates.name = name;
+    }
+    if (avatarUrl && !existing.avatar_url) {
+      updates.avatar_url = avatarUrl;
+      updates.avatar_updated_at = new Date().toISOString();
+    }
+    if (Object.keys(updates).length > 0) {
       const { error: updErr } = await supabaseAdmin
         .from("conversations")
-        .update({ name })
+        .update(updates)
         .eq("id", existing.id);
-      if (updErr) console.log("⚠️ Erro atualizando nome do grupo:", updErr);
-      else console.log("✏️ Nome do grupo atualizado para:", name);
+      if (updErr) console.log("⚠️ Erro atualizando conversa:", updErr);
+      else console.log("✏️ Conversa atualizada:", updates);
     }
     return existing.id;
   }
@@ -388,6 +418,8 @@ async function upsertConversation(params: {
       type: isGroup ? "GROUP" : "PRIVATE",
       name: finalName,
       last_message: "",
+      avatar_url: avatarUrl ?? null,
+      avatar_updated_at: avatarUrl ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
@@ -397,6 +429,66 @@ async function upsertConversation(params: {
   }
   console.log("🆕 Conversa criada:", created.id);
   return created.id;
+}
+
+/**
+ * Best-effort fetch of a contact's profile picture from Whapi.
+ * Skips if the conversation already has an avatar fresher than 7 days,
+ * or if the integration is unavailable. Failures are swallowed.
+ */
+async function maybeFetchProfilePic(params: {
+  conversationId: string;
+  chatId: string;
+  workspaceId: string;
+}) {
+  const { conversationId, chatId, workspaceId } = params;
+  try {
+    const { data: conv } = await supabaseAdmin
+      .from("conversations")
+      .select("avatar_url, avatar_updated_at")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (conv?.avatar_url && conv.avatar_updated_at) {
+      const ageMs = Date.now() - new Date(conv.avatar_updated_at).getTime();
+      if (ageMs < 7 * 24 * 60 * 60 * 1000) return; // fresh enough
+    }
+
+    const { data: integ } = await supabaseAdmin
+      .from("workspace_integrations")
+      .select("api_url, token, enabled")
+      .eq("workspace_id", workspaceId)
+      .eq("provider", "whapi")
+      .maybeSingle();
+    if (!integ?.token || integ.enabled === false) return;
+
+    const apiUrl = integ.api_url.replace(/\/$/, "");
+    const url = `${apiUrl}/contacts/${encodeURIComponent(chatId)}/profile`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${integ.token}`,
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      console.log("ℹ️ profile pic fetch falhou:", res.status);
+      return;
+    }
+    const json = (await res.json()) as Record<string, unknown>;
+    const pic =
+      (json?.profile_pic_full as string | undefined) ||
+      (json?.profile_pic as string | undefined) ||
+      (json?.image as string | undefined) ||
+      null;
+    if (!pic) return;
+
+    await supabaseAdmin
+      .from("conversations")
+      .update({ avatar_url: pic, avatar_updated_at: new Date().toISOString() })
+      .eq("id", conversationId);
+    console.log("🖼️ Avatar atualizado para conversa:", conversationId);
+  } catch (e) {
+    console.log("⚠️ maybeFetchProfilePic erro:", e instanceof Error ? e.message : e);
+  }
 }
 
 function shouldReplaceGroupName(current: string | null | undefined): boolean {
