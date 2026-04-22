@@ -81,6 +81,7 @@ export function ChatArea({
   onDeleted,
   onBack,
 }: Props) {
+  const { user } = useAuth();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [busy, setBusy] = useState(false);
