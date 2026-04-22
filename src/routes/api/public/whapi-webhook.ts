@@ -310,6 +310,33 @@ function digitsOnly(v: unknown): string {
   return String(v).replace(/\D+/g, "");
 }
 
+/**
+ * Extracts media (image, video, audio, document, sticker) info from a Whapi
+ * message payload. Whapi exposes media under msg[<type>] with `link` (signed
+ * CDN URL) and `mime_type`. Returns null when there's no media URL.
+ */
+function extractMedia(msg: any): { url: string; mimeType: string | null; type: string } | null {
+  const candidates: Array<{ key: string; type: string }> = [
+    { key: "image", type: "image" },
+    { key: "video", type: "video" },
+    { key: "audio", type: "audio" },
+    { key: "voice", type: "audio" },
+    { key: "ptt", type: "audio" },
+    { key: "document", type: "document" },
+    { key: "sticker", type: "image" },
+  ];
+  for (const { key, type } of candidates) {
+    const node = msg?.[key];
+    if (!node) continue;
+    const url: string | undefined =
+      node.link || node.url || node.preview_url || node.thumbnail_url;
+    if (typeof url === "string" && url.startsWith("http")) {
+      return { url, mimeType: node.mime_type ?? node.mimetype ?? null, type };
+    }
+  }
+  return null;
+}
+
 function firstPhoneCandidate(values: unknown[]): { raw: unknown; digits: string } | null {
   for (const raw of values) {
     const digits = digitsOnly(raw);
