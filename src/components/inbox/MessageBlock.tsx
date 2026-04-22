@@ -2,26 +2,24 @@ import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ContactAvatar } from "./ContactAvatar";
 
-function formatStamp(iso: string) {
+function formatTime(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
+  return d.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
 /**
- * Single-column message block (CRM ticket-style — not a chat bubble).
- * Internal notes (fromMe) get a subtle accent edge to differentiate without mirroring the layout.
- * Renders inline media (images/video/audio) when the message carries a media URL.
+ * Chat-style message bubble. Outgoing messages (fromMe / agents) align to the
+ * right with the primary color; incoming messages align to the left in a
+ * neutral surface tone — similar to WhatsApp.
  */
 export function MessageBlock({ message }: { message: Message }) {
   const isAgent = message.fromMe;
-  // Outgoing messages are sent with a "*Sender Name:*\n" signature prefix so the
-  // recipient on WhatsApp sees who wrote it. Strip it locally to avoid showing
-  // the agent name twice (header + body).
+  // Outgoing messages are sent with a "*Sender Name:*\n" signature prefix so
+  // the recipient on WhatsApp sees who wrote it. Strip it locally to avoid
+  // showing the agent name twice (header + body).
   const displayContent = isAgent
     ? message.content.replace(/^\*[^*\n]+:\*\n?/, "")
     : message.content;
@@ -31,70 +29,60 @@ export function MessageBlock({ message }: { message: Message }) {
   const mimeType = message.mediaMimeType ?? undefined;
 
   return (
-    <article
+    <div
       className={cn(
-        "group relative rounded-lg border bg-surface px-4 py-3 transition",
-        isAgent
-          ? "border-primary/30 bg-primary/[0.04]"
-          : "border-border hover:border-border-strong",
+        "flex w-full items-end gap-2",
+        isAgent ? "justify-end" : "justify-start",
       )}
     >
-      {/* Left edge accent */}
-      <span
-        className={cn(
-          "absolute left-0 top-3 bottom-3 w-0.5 rounded-r",
-          isAgent ? "bg-primary" : "bg-border-strong",
-        )}
-      />
-
-      <header className="mb-1.5 flex items-center gap-2">
+      {!isAgent && (
         <ContactAvatar
           src={message.senderAvatarUrl}
           name={message.senderName || "?"}
           size="sm"
-          className={cn(
-            "h-6 w-6 text-[10px]",
-            isAgent && "border-primary/30",
-          )}
+          className="h-7 w-7 shrink-0 text-[10px]"
         />
-        <span className="text-[13px] font-semibold text-foreground">{message.senderName}</span>
-        {isAgent && (
-          <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
-            Agent
+      )}
+
+      <div
+        className={cn(
+          "flex max-w-[75%] flex-col gap-1 rounded-2xl px-3 py-2 shadow-sm sm:max-w-[65%]",
+          isAgent
+            ? "rounded-br-sm bg-primary text-primary-foreground"
+            : "rounded-bl-sm bg-surface text-foreground border border-border",
+        )}
+      >
+        {/* Sender name — only show for incoming messages so the user can tell
+            contacts apart in group chats. For outgoing messages the bubble
+            color already conveys authorship. */}
+        {!isAgent && (
+          <span className="text-[11px] font-semibold text-primary">
+            {message.senderName}
           </span>
         )}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-          {formatStamp(message.createdAt)}
-        </span>
-      </header>
 
-      <div className="space-y-2 pl-8">
         {mediaUrl && mediaType === "image" && (
           <a
             href={mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block max-w-sm overflow-hidden rounded-md border border-border bg-background"
+            className="block overflow-hidden rounded-lg"
           >
             <img
               src={mediaUrl}
-              alt={displayContent || "Imagem recebida"}
-              className="h-auto w-full object-cover"
+              alt={displayContent || "Imagem"}
+              className="h-auto max-h-80 w-full object-cover"
               loading="lazy"
             />
           </a>
         )}
 
         {mediaUrl && mediaType === "video" && (
-          <video
-            src={mediaUrl}
-            controls
-            className="max-w-sm rounded-md border border-border bg-background"
-          />
+          <video src={mediaUrl} controls className="max-h-80 w-full rounded-lg" />
         )}
 
         {mediaUrl && mediaType === "audio" && (
-          <audio src={mediaUrl} controls className="w-full max-w-sm" />
+          <audio src={mediaUrl} controls className="w-full min-w-[220px]" />
         )}
 
         {mediaUrl && (mediaType === "document" || mediaType === "sticker") && (
@@ -102,21 +90,51 @@ export function MessageBlock({ message }: { message: Message }) {
             href={mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-[13px] text-foreground/90 hover:bg-surface"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px]",
+              isAgent
+                ? "bg-primary-foreground/15 hover:bg-primary-foreground/25"
+                : "bg-background hover:bg-surface-2 border border-border",
+            )}
           >
             📎 {mediaType === "sticker" ? "Sticker" : "Abrir documento"}
             {mimeType && (
-              <span className="text-[11px] text-muted-foreground">({mimeType})</span>
+              <span
+                className={cn(
+                  "text-[11px]",
+                  isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
+                )}
+              >
+                ({mimeType})
+              </span>
             )}
           </a>
         )}
 
         {displayContent && (
-          <div className="text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
+          <div className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
             {displayContent}
           </div>
         )}
+
+        <span
+          className={cn(
+            "self-end font-mono text-[10px] leading-none",
+            isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
+          )}
+        >
+          {formatTime(message.createdAt)}
+        </span>
       </div>
-    </article>
+
+      {isAgent && (
+        <ContactAvatar
+          src={message.senderAvatarUrl}
+          name={message.senderName || "?"}
+          size="sm"
+          className="h-7 w-7 shrink-0 border-primary/30 text-[10px]"
+        />
+      )}
+    </div>
   );
 }
