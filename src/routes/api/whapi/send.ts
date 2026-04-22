@@ -95,17 +95,21 @@ export const Route = createFileRoute("/api/whapi/send")({
             return jsonResponse({ error: "Token do Whapi não configurado" }, 400);
           }
 
-          // ----- Sender name from profile (used for signature) -----
+          // ----- Sender name + signature from profile -----
           const { data: prof } = await supabaseAdmin
             .from("profiles")
-            .select("name")
+            .select("name, signature")
             .eq("id", userId)
             .maybeSingle();
           const senderName = prof?.name || "Agent";
+          const customSignature = (prof?.signature ?? "").trim();
 
           // Prefix every outgoing message with the agent signature so both the
           // recipient (on WhatsApp) and the local panel see who sent it.
-          const signedContent = `*${senderName}:*\n${content}`;
+          // Users can customize their signature in Settings; falls back to name.
+          const signedContent = customSignature
+            ? `${customSignature}\n${content}`
+            : `*${senderName}:*\n${content}`;
 
           // ----- Send to Whapi -----
           const apiUrl = integration.api_url.replace(/\/$/, "");

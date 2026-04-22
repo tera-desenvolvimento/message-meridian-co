@@ -298,18 +298,21 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          signature: string | null
         }
         Insert: {
           created_at?: string
           email?: string | null
           id: string
           name?: string
+          signature?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
           id?: string
           name?: string
+          signature?: string | null
         }
         Relationships: []
       }

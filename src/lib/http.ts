@@ -493,14 +493,32 @@ export const api = {
     return { ok: true };
   },
 
-  async updateOwnProfile(input: { name: string }): Promise<{ ok: true }> {
+  async updateOwnProfile(input: { name?: string; signature?: string | null }): Promise<{ ok: true }> {
     const uid = await getSessionUserId();
+    const patch: { name?: string; signature?: string | null } = {};
+    if (typeof input.name === "string") patch.name = input.name;
+    if (input.signature !== undefined) {
+      const sig = (input.signature ?? "").trim();
+      patch.signature = sig.length ? sig : null;
+    }
+    if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabase
       .from("profiles")
-      .update({ name: input.name })
+      .update(patch)
       .eq("id", uid);
     if (error) throw error;
     return { ok: true };
+  },
+
+  async getOwnProfile(): Promise<{ name: string; signature: string }> {
+    const uid = await getSessionUserId();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("name, signature")
+      .eq("id", uid)
+      .maybeSingle();
+    if (error) throw error;
+    return { name: data?.name ?? "", signature: (data?.signature as string | null) ?? "" };
   },
 
   async updateOwnPassword(newPassword: string): Promise<{ ok: true }> {
