@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Pencil, UserCog } from "lucide-react";
+import { Check, Copy, KeyRound, Pencil, UserCog } from "lucide-react";
 import { api } from "@/lib/http";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -83,6 +83,8 @@ function TeamPanel() {
           </div>
         </div>
 
+        {isAdmin && <TeamCodeCard />}
+
         {isAdmin && <AddMemberForm onAdded={refresh} />}
 
         {error && (
@@ -160,6 +162,50 @@ function TeamPanel() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function TeamCodeCard() {
+  const { workspace } = useAuth();
+  const [copied, setCopied] = useState(false);
+  const code = workspace?.id ?? "";
+
+  async function copy() {
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-md border border-primary/30 bg-primary/5 p-4">
+      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+        <KeyRound className="h-3.5 w-3.5" />
+        Código da equipe
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Compartilhe este código com novos colaboradores. Após criarem a conta na
+        plataforma, eles devem colá-lo na tela de entrada para acessar este workspace.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <code className="flex-1 select-all break-all rounded-md border border-border bg-background px-3 py-2 font-mono text-xs text-foreground">
+          {code || "—"}
+        </code>
+        <button
+          type="button"
+          onClick={copy}
+          disabled={!code}
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 text-xs font-medium text-foreground/80 transition hover:bg-surface-2 disabled:opacity-60"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? "Copiado" : "Copiar código"}
+        </button>
+      </div>
     </div>
   );
 }

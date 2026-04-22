@@ -24,6 +24,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as ApiWhapiStartConversationRouteImport } from './routes/api/whapi/start-conversation'
 import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
 import { Route as ApiWhapiRefreshAvatarsRouteImport } from './routes/api/whapi/refresh-avatars'
+import { Route as ApiTeamJoinByCodeRouteImport } from './routes/api/team/join-by-code'
 import { Route as ApiTeamAddMemberRouteImport } from './routes/api/team/add-member'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
 import { Route as ApiPublicAcceptInviteRouteImport } from './routes/api/public/accept-invite'
@@ -107,6 +108,11 @@ const ApiWhapiRefreshAvatarsRoute = ApiWhapiRefreshAvatarsRouteImport.update({
   path: '/api/whapi/refresh-avatars',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTeamJoinByCodeRoute = ApiTeamJoinByCodeRouteImport.update({
+  id: '/api/team/join-by-code',
+  path: '/api/team/join-by-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTeamAddMemberRoute = ApiTeamAddMemberRouteImport.update({
   id: '/api/team/add-member',
   path: '/api/team/add-member',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
+  '/api/team/join-by-code': typeof ApiTeamJoinByCodeRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
+  '/api/team/join-by-code': typeof ApiTeamJoinByCodeRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
+  '/api/team/join-by-code': typeof ApiTeamJoinByCodeRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
+    | '/api/team/join-by-code'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
+    | '/api/team/join-by-code'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
+    | '/api/team/join-by-code'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
   ApiTeamAddMemberRoute: typeof ApiTeamAddMemberRoute
+  ApiTeamJoinByCodeRoute: typeof ApiTeamJoinByCodeRoute
   ApiWhapiRefreshAvatarsRoute: typeof ApiWhapiRefreshAvatarsRoute
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
@@ -414,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWhapiRefreshAvatarsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/team/join-by-code': {
+      id: '/api/team/join-by-code'
+      path: '/api/team/join-by-code'
+      fullPath: '/api/team/join-by-code'
+      preLoaderRoute: typeof ApiTeamJoinByCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/team/add-member': {
       id: '/api/team/add-member'
       path: '/api/team/add-member'
@@ -474,6 +494,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
   ApiTeamAddMemberRoute: ApiTeamAddMemberRoute,
+  ApiTeamJoinByCodeRoute: ApiTeamJoinByCodeRoute,
   ApiWhapiRefreshAvatarsRoute: ApiWhapiRefreshAvatarsRoute,
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
