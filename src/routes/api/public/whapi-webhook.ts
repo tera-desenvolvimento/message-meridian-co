@@ -603,6 +603,20 @@ function shouldReplaceGroupName(current: string | null | undefined): boolean {
   return false;
 }
 
+/**
+ * For private contacts: only replace the stored name if it's a placeholder
+ * (empty, "Contato", or just digits like "+5511..."). We never overwrite a
+ * human-edited name with whatever WhatsApp's push name says today.
+ */
+export function shouldReplaceContactName(current: string | null | undefined): boolean {
+  if (!current) return true;
+  const trimmed = current.trim();
+  if (!trimmed) return true;
+  if (trimmed.toLowerCase() === "contato") return true;
+  if (/^\+?\d[\d\s-]*$/.test(trimmed)) return true;
+  return false;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
