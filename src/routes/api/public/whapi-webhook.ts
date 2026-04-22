@@ -167,12 +167,24 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               msg?.author_name ||
               (contactDigits ? `+${contactDigits}` : "Contato");
 
+            // Telefone/digits do CONTATO da conversa (destinatário em privado, ou o próprio chat).
+            // Para conversas privadas isso é o `chat_id` (sem o sufixo @s.whatsapp.net),
+            // independentemente de quem enviou a mensagem.
+            const chatContactDigits = String(chatId).split("@")[0]?.replace(/\D+/g, "") ?? "";
+
             // Nome da CONVERSA:
             // - Grupo: usar chat_name (nome do grupo) — NUNCA usar nome do remetente
-            // - Privado: usar nome do contato
+            // - Privado: SOMENTE usar dados do contato (chat). NUNCA usar from_name/push_name
+            //   quando from_me=true, pois esse é o nome da NOSSA própria linha (ex.: "Base03"),
+            //   não do contato. Se a mensagem é recebida (from_me=false), aí sim from_name é
+            //   o nome do contato. Caso contrário, cair no número/placeholder e deixar o
+            //   maybeFetchProfilePic buscar o nome real via API.
             const conversationName: string | null = isGroup
               ? msg?.chat_name || payload?.chat?.name || null
-              : msg?.from_name || msg?.push_name || msg?.chat_name || (contactDigits ? `+${contactDigits}` : "Contato");
+              : (!fromMe && (msg?.from_name || msg?.push_name)) ||
+                msg?.chat_name ||
+                payload?.chat?.name ||
+                (chatContactDigits ? `+${chatContactDigits}` : null);
 
             // Profile picture (avatar) — Whapi sometimes includes these inline
             const senderAvatar: string | null =
@@ -184,7 +196,9 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               null;
             const conversationAvatar: string | null = isGroup
               ? msg?.chat_image || msg?.chat_picture || payload?.chat?.image || null
-              : senderAvatar;
+              : fromMe
+                ? null // não usar avatar do remetente (nós) para a conversa do contato
+                : senderAvatar;
 
             const content: string =
               msg?.text?.body ||
@@ -392,8 +406,11 @@ async function upsertConversation(params: {
   if (existing) {
     console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
     const updates: { name?: string; avatar_url?: string; avatar_updated_at?: string } = {};
-    if (isGroup && name && shouldReplaceGroupName(existing.name)) {
-      updates.name = name;
+    if (name) {
+      const canReplace = isGroup
+        ? shouldReplaceGroupName(existing.name)
+        : shouldReplaceContactName(existing.name);
+      if (canReplace) updates.name = name;
     }
     if (avatarUrl && !existing.avatar_url) {
       updates.avatar_url = avatarUrl;
