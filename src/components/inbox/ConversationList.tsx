@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check } from "lucide-react";
-import type { Conversation, ConversationStatus, TeamMember } from "@/lib/types";
+import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check, Users, UserRound, MessageSquare } from "lucide-react";
+import type { Conversation, ConversationStatus, ConversationType, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { ContactAvatar } from "./ContactAvatar";
