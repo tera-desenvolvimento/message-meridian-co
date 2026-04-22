@@ -328,7 +328,7 @@ export function ConversationList({
                     type="button"
                     onClick={() => onSelect(c.id)}
                     className={cn(
-                      "group relative flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition",
+                      "group relative flex w-full items-start gap-2.5 border-b border-border px-3 py-2.5 text-left transition sm:gap-3 sm:px-4 sm:py-3",
                       active ? "bg-surface-2" : "hover:bg-surface-2/60",
                     )}
                   >
