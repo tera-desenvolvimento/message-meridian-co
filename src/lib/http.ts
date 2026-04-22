@@ -112,7 +112,7 @@ export const api = {
   async listMessages(conversationId: string): Promise<Message[]> {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, conversation_id, content, from_me, sender_name, created_at")
+      .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -149,7 +149,7 @@ export const api = {
       // Webhook already inserted the echo; fetch the most recent outgoing message.
       const { data } = await supabase
         .from("messages")
-        .select("id, conversation_id, content, from_me, sender_name, created_at")
+        .select("id, conversation_id, content, from_me, sender_name, sender_avatar_url, created_at")
         .eq("conversation_id", conversationId)
         .eq("from_me", true)
         .order("created_at", { ascending: false })
@@ -165,6 +165,7 @@ export const api = {
       content: m.content,
       fromMe: m.fromMe,
       senderName: m.senderName,
+      senderAvatarUrl: m.senderAvatarUrl ?? null,
       createdAt: m.createdAt,
       type: "text",
     };
