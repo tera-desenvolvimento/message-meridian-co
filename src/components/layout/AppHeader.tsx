@@ -1,11 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 
 /**
  * Top app bar shown on authenticated pages. Workspace identity + nav + logout.
  */
 export function AppHeader() {
   const { user, workspace, logout } = useAuth();
+  const { theme, toggle } = useTheme();
   const location = useLocation();
   const path = location.pathname;
 
@@ -47,6 +50,14 @@ export function AppHeader() {
             {user?.role}
           </div>
         </div>
+        <button
+          onClick={toggle}
+          aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-border-strong hover:text-foreground"
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
         <button
           onClick={logout}
           className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-border-strong hover:text-foreground"
