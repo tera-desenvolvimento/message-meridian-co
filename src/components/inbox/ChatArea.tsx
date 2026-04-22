@@ -489,7 +489,7 @@ export function ChatArea({
       {/* MESSAGES */}
       <div
         ref={scrollRef}
-        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-4 py-5 md:px-8 md:py-6"
+        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-6"
       >
         {loadingMessages && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -510,7 +510,7 @@ export function ChatArea({
 
       {/* COMPOSER */}
       <div
-        className="shrink-0 border-t border-border bg-surface px-4 py-3 md:px-6"
+        className="shrink-0 border-t border-border bg-surface px-3 py-2.5 sm:px-4 sm:py-3 md:px-6"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto max-w-3xl">
