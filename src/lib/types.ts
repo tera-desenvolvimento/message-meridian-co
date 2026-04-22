@@ -18,6 +18,12 @@ export interface Conversation {
   priority: ConversationPriority;
   assignedTo: Assignee | null;
   avatarUrl: string | null;
+  /**
+   * Timestamp da última mensagem recebida do cliente que ainda não foi
+   * respondida pela equipe. `null` quando a última mensagem foi enviada
+   * por um agente (ou seja, já respondemos).
+   */
+  awaitingReplySince: string | null;
 }
 
 export type MediaType = "image" | "video" | "audio" | "document" | "sticker";

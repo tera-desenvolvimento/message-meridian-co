@@ -64,6 +64,7 @@ function mapConversation(row: {
   assigned_to: string | null;
   avatar_url?: string | null;
   assignee?: { id: string; name: string } | null;
+  awaiting_reply_since?: string | null;
 }): Conversation {
   return {
     id: row.id,
@@ -76,6 +77,7 @@ function mapConversation(row: {
     priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
     avatarUrl: row.avatar_url ?? null,
+    awaitingReplySince: row.awaiting_reply_since ?? null,
   };
 }
 
@@ -653,12 +655,42 @@ async function manualListConversations(wsId: string): Promise<Conversation[]> {
       .in("id", assigneeIds);
     profileMap = new Map((profs ?? []).map((p) => [p.id, p.name]));
   }
+
+  // Para cada conversa, descobre se a última mensagem foi do cliente (from_me=false).
+  // Caso afirmativo, registramos quando ela chegou para indicar há quanto tempo
+  // estamos sem responder. Limitamos a 200 conversas por consulta para evitar
+  // payloads enormes.
+  const awaitingMap = new Map<string, string>();
+  const convIds = rows.slice(0, 200).map((r) => r.id);
+  if (convIds.length) {
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("conversation_id, from_me, created_at")
+      .in("conversation_id", convIds)
+      .order("created_at", { ascending: false });
+    if (msgs) {
+      const seen = new Set<string>();
+      for (const m of msgs as Array<{
+        conversation_id: string;
+        from_me: boolean;
+        created_at: string;
+      }>) {
+        if (seen.has(m.conversation_id)) continue;
+        seen.add(m.conversation_id);
+        if (!m.from_me) {
+          awaitingMap.set(m.conversation_id, m.created_at);
+        }
+      }
+    }
+  }
+
   return rows.map((r) =>
     mapConversation({
       ...r,
       assignee: r.assigned_to
         ? { id: r.assigned_to, name: profileMap.get(r.assigned_to) ?? "—" }
         : null,
+      awaiting_reply_since: awaitingMap.get(r.id) ?? null,
     }),
   );
 }
