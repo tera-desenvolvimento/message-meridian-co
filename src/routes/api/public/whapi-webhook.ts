@@ -200,11 +200,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 ? null // não usar avatar do remetente (nós) para a conversa do contato
                 : senderAvatar;
 
+            // Extract media (image, video, audio, document, sticker) URL/metadata from Whapi payload.
+            // Whapi typically exposes the media object under msg[<type>] with `link` (CDN URL),
+            // `mime_type` and a `caption` for visual media. We persist the link so the UI can render it.
+            const mediaInfo = extractMedia(msg);
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
               msg?.image?.caption ||
-              `[${msg?.type || "mensagem"}]`;
+              msg?.video?.caption ||
+              msg?.document?.caption ||
+              (mediaInfo ? "" : `[${msg?.type || "mensagem"}]`);
             const externalMsgId: string | undefined = msg?.id;
 
             console.log("🔎 Buscando conversa...", {
@@ -252,6 +259,9 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 sender_phone: contactDigits || null,
                 sender_avatar_url: senderAvatar,
                 external_id: externalMsgId ?? null,
+                media_url: mediaInfo?.url ?? null,
+                media_mime_type: mediaInfo?.mimeType ?? null,
+                media_type: mediaInfo?.type ?? null,
               })
               .select("id")
               .maybeSingle();

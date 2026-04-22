@@ -20,6 +20,8 @@ export interface Conversation {
   avatarUrl: string | null;
 }
 
+export type MediaType = "image" | "video" | "audio" | "document" | "sticker";
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -29,6 +31,9 @@ export interface Message {
   senderAvatarUrl: string | null;
   createdAt: string;
   type?: "text" | "image" | "audio";
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
+  mediaType?: MediaType | null;
 }
 
 // ---------- Auth & Workspace ----------
