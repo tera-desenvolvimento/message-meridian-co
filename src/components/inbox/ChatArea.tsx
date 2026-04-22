@@ -314,19 +314,21 @@ export function ChatArea({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Assign */}
+            {/* Assign — mostra como ícone em mobile e botão completo em sm+ */}
             <DropdownMenu onOpenChange={(o) => o && void ensureMembers()}>
               <DropdownMenuTrigger asChild>
                 <button
                   disabled={busy}
-                  className="hidden items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60 sm:inline-flex"
+                  title="Atribuir"
+                  aria-label="Atribuir"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60 sm:px-2.5"
                 >
                   {busy ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <UserPlus className="h-3.5 w-3.5" />
                   )}
-                  Atribuir
+                  <span className="hidden sm:inline">Atribuir</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
