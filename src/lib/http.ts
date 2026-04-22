@@ -560,6 +560,45 @@ export const api = {
     if (error) throw error;
     return { ok: true };
   },
+
+  /**
+   * Add an existing platform user to the current workspace by e-mail.
+   * Requires the caller to be ADMIN. The target user must already have a
+   * registered account (we look them up by their profile e-mail).
+   */
+  async addExistingUserByEmail(
+    email: string,
+    role: UserRole,
+  ): Promise<{
+    ok: true;
+    reactivated?: boolean;
+    user: { id: string; name: string; email: string };
+  }> {
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) throw createAuthRequiredError();
+
+    const res = await fetch("/api/team/add-member", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ email, role }),
+    });
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // ignore
+    }
+    if (!res.ok) {
+      const err = new Error(json?.error || `Falha ao adicionar membro (HTTP ${res.status})`);
+      (err as any).code = json?.code;
+      throw err;
+    }
+    return json;
+  },
 };
 
 // ---- fallbacks when PostgREST relationship hints fail ----
