@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Search, User, Users, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
+import { Search, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
 import type { Conversation, ConversationStatus } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
+import { ContactAvatar } from "./ContactAvatar";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
 import {
@@ -169,9 +170,13 @@ export function ConversationList({
                       )}
                     />
 
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground">
-                      {c.type === "GROUP" ? <Users className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
-                    </div>
+                    <ContactAvatar
+                      src={c.avatarUrl}
+                      name={c.name}
+                      isGroup={c.type === "GROUP"}
+                      size="md"
+                      className="mt-0.5"
+                    />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
