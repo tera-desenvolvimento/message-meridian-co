@@ -482,21 +482,27 @@ async function maybeFetchProfilePic(params: {
   }
 }
 
+export interface WhapiContactInfo {
+  avatarUrl: string | null;
+  name: string | null;
+}
+
 /**
- * Try multiple Whapi endpoints to fetch a profile picture URL.
- * Returns the first non-empty URL found, or null.
+ * Try multiple Whapi endpoints to fetch a contact/group profile picture URL
+ * AND the canonical display name (group subject or contact push name).
  *
  * Notes about Whapi quirks:
  *  - `/contacts/{id}/profile` requires a digits-only ContactID (no `@s.whatsapp.net`).
  *  - `/groups/{id}/icon` returns a binary JPEG (not JSON). We avoid it here.
- *  - `/groups/{id}` and `/chats/{id}` return JSON metadata that includes `chat_pic` / `chat_pic_full`.
+ *  - `/groups/{id}` and `/chats/{id}` return JSON metadata that includes both
+ *    `chat_pic` / `chat_pic_full` and `name` / `subject`.
  */
-export async function fetchWhapiAvatar(params: {
+export async function fetchWhapiContactInfo(params: {
   apiUrl: string;
   token: string;
   chatId: string;
   isGroup: boolean;
-}): Promise<string | null> {
+}): Promise<WhapiContactInfo> {
   const { token, chatId, isGroup } = params;
   const apiUrl = params.apiUrl.replace(/\/$/, "");
   const headers = {
@@ -519,36 +525,71 @@ export async function fetchWhapiAvatar(params: {
         `${apiUrl}/chats/${encodeURIComponent(chatId)}`,
       ].filter((u): u is string => !!u);
 
+  let foundPic: string | null = null;
+  let foundName: string | null = null;
+
   for (const url of endpoints) {
     try {
       const res = await fetch(url, { headers });
       if (!res.ok) {
-        console.log(`ℹ️ profile pic fetch ${res.status}: ${url}`);
+        console.log(`ℹ️ whapi info fetch ${res.status}: ${url}`);
         continue;
       }
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("json")) {
-        // Endpoints that stream raw image bytes (e.g. /groups/{id}/icon) — skip.
-        console.log(`ℹ️ profile pic non-JSON (${ct}): ${url}`);
+        console.log(`ℹ️ whapi info non-JSON (${ct}): ${url}`);
         continue;
       }
       const data = (await res.json()) as Record<string, unknown>;
-      const pic =
-        (data?.profile_pic_full as string | undefined) ||
-        (data?.profile_pic as string | undefined) ||
-        (data?.chat_pic_full as string | undefined) ||
-        (data?.chat_pic as string | undefined) ||
-        (data?.icon_full as string | undefined) ||
-        (data?.icon as string | undefined) ||
-        (data?.image as string | undefined) ||
-        null;
-      if (pic) return pic;
-      console.log(`ℹ️ profile pic JSON sem url: ${url}`, Object.keys(data));
+
+      if (!foundPic) {
+        const pic =
+          (data?.profile_pic_full as string | undefined) ||
+          (data?.profile_pic as string | undefined) ||
+          (data?.chat_pic_full as string | undefined) ||
+          (data?.chat_pic as string | undefined) ||
+          (data?.icon_full as string | undefined) ||
+          (data?.icon as string | undefined) ||
+          (data?.image as string | undefined) ||
+          null;
+        if (pic) foundPic = pic;
+      }
+
+      if (!foundName) {
+        const name =
+          (data?.subject as string | undefined) || // groups
+          (data?.name as string | undefined) || // contacts/chats
+          (data?.pushname as string | undefined) ||
+          (data?.push_name as string | undefined) ||
+          (data?.formatted_name as string | undefined) ||
+          (data?.display_name as string | undefined) ||
+          null;
+        if (name && typeof name === "string" && name.trim()) {
+          foundName = name.trim();
+        }
+      }
+
+      if (foundPic && foundName) break;
     } catch (e) {
-      console.log(`⚠️ profile pic fetch error: ${url}`, e instanceof Error ? e.message : e);
+      console.log(`⚠️ whapi info fetch error: ${url}`, e instanceof Error ? e.message : e);
     }
   }
-  return null;
+
+  return { avatarUrl: foundPic, name: foundName };
+}
+
+/**
+ * Backwards-compatible helper that only returns the avatar URL.
+ * @deprecated Use fetchWhapiContactInfo instead.
+ */
+export async function fetchWhapiAvatar(params: {
+  apiUrl: string;
+  token: string;
+  chatId: string;
+  isGroup: boolean;
+}): Promise<string | null> {
+  const info = await fetchWhapiContactInfo(params);
+  return info.avatarUrl;
 }
 
 function shouldReplaceGroupName(current: string | null | undefined): boolean {
@@ -558,6 +599,20 @@ function shouldReplaceGroupName(current: string | null | undefined): boolean {
   if (trimmed.toLowerCase() === "grupo") return true;
   if (trimmed.toLowerCase() === "contato") return true;
   // Apenas dígitos / placeholder de telefone
+  if (/^\+?\d[\d\s-]*$/.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * For private contacts: only replace the stored name if it's a placeholder
+ * (empty, "Contato", or just digits like "+5511..."). We never overwrite a
+ * human-edited name with whatever WhatsApp's push name says today.
+ */
+export function shouldReplaceContactName(current: string | null | undefined): boolean {
+  if (!current) return true;
+  const trimmed = current.trim();
+  if (!trimmed) return true;
+  if (trimmed.toLowerCase() === "contato") return true;
   if (/^\+?\d[\d\s-]*$/.test(trimmed)) return true;
   return false;
 }

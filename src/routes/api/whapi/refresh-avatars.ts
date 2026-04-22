@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
-import { fetchWhapiAvatar } from "@/routes/api/public/whapi-webhook";
+import {
+  fetchWhapiContactInfo,
+  shouldReplaceContactName,
+} from "@/routes/api/public/whapi-webhook";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,6 +17,11 @@ function jsonResponse(body: unknown, status = 200) {
 const STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_PER_CALL = 30;
 
+/**
+ * Backfills WhatsApp profile pictures AND canonical names for the current
+ * workspace. Despite the route name (kept for backwards compatibility with
+ * the deployed frontend), this endpoint refreshes both fields.
+ */
 export const Route = createFileRoute("/api/whapi/refresh-avatars")({
   server: {
     handlers: {
@@ -66,11 +74,13 @@ export const Route = createFileRoute("/api/whapi/refresh-avatars")({
             return jsonResponse({ ok: true, refreshed: 0, skipped: 0, reason: "no_integration" });
           }
 
-          // Pick conversations that need an avatar refresh.
+          // Pick conversations that need a refresh: missing avatar OR
+          // avatar is older than the freshness window. We also re-evaluate
+          // the name on every refresh (cheap, same API call).
           const staleCutoff = new Date(Date.now() - STALE_MS).toISOString();
           const { data: convs, error: convErr } = await supabaseAdmin
             .from("conversations")
-            .select("id, external_id, type, avatar_url, avatar_updated_at")
+            .select("id, external_id, type, name, avatar_url, avatar_updated_at")
             .eq("workspace_id", workspaceId)
             .not("external_id", "is", null)
             .or(`avatar_url.is.null,avatar_updated_at.lt.${staleCutoff}`)
@@ -82,6 +92,7 @@ export const Route = createFileRoute("/api/whapi/refresh-avatars")({
           }
 
           let refreshed = 0;
+          let renamed = 0;
           let skipped = 0;
           const nowIso = new Date().toISOString();
 
@@ -92,33 +103,55 @@ export const Route = createFileRoute("/api/whapi/refresh-avatars")({
               continue;
             }
             try {
-              const pic = await fetchWhapiAvatar({
+              const info = await fetchWhapiContactInfo({
                 apiUrl: integ.api_url,
                 token: integ.token,
                 chatId: c.external_id,
                 isGroup: c.type === "GROUP",
               });
-              if (!pic) {
-                // Mark as checked so we don't retry every poll.
-                await supabaseAdmin
-                  .from("conversations")
-                  .update({ avatar_updated_at: nowIso })
-                  .eq("id", c.id);
-                skipped++;
-                continue;
+
+              const update: {
+                avatar_url?: string;
+                avatar_updated_at?: string;
+                name?: string;
+              } = { avatar_updated_at: nowIso };
+
+              if (info.avatarUrl) {
+                update.avatar_url = info.avatarUrl;
               }
-              await supabaseAdmin
-                .from("conversations")
-                .update({ avatar_url: pic, avatar_updated_at: nowIso })
-                .eq("id", c.id);
-              refreshed++;
+
+              // Only overwrite the name if the current one looks like a placeholder
+              // (never clobber a human-edited name).
+              if (info.name) {
+                const isGroup = c.type === "GROUP";
+                const placeholder = isGroup
+                  ? !c.name ||
+                    c.name.trim().toLowerCase() === "grupo" ||
+                    /^\+?\d[\d\s-]*$/.test(c.name.trim())
+                  : shouldReplaceContactName(c.name);
+                if (placeholder && info.name !== c.name) {
+                  update.name = info.name;
+                  renamed++;
+                }
+              }
+
+              await supabaseAdmin.from("conversations").update(update).eq("id", c.id);
+
+              if (info.avatarUrl) refreshed++;
+              else if (!update.name) skipped++;
             } catch (e) {
               console.log("⚠️ refresh-avatars per-conv error:", e instanceof Error ? e.message : e);
               skipped++;
             }
           }
 
-          return jsonResponse({ ok: true, refreshed, skipped, total: convs?.length ?? 0 });
+          return jsonResponse({
+            ok: true,
+            refreshed,
+            renamed,
+            skipped,
+            total: convs?.length ?? 0,
+          });
         } catch (e) {
           console.error("💥 refresh-avatars fatal:", e);
           return jsonResponse({ error: "Erro interno" }, 500);
