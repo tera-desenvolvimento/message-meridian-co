@@ -83,7 +83,7 @@ function TeamPanel() {
           </div>
         </div>
 
-        {isAdmin && <InviteForm onInvited={refresh} />}
+        {isAdmin && <AddMemberForm onAdded={refresh} />}
 
         {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -164,98 +164,55 @@ function TeamPanel() {
   );
 }
 
-function InviteForm({ onInvited }: { onInvited: () => void }) {
+function AddMemberForm({ onAdded }: { onAdded: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("AGENT");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const [pending, setPending] = useState<import("@/lib/types").Invitation[]>([]);
-  const [resendingId, setResendingId] = useState<string | null>(null);
-
-  const refreshPending = useCallback(async () => {
-    try {
-      const list = await api.listInvitations();
-      setPending(list);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshPending();
-  }, [refreshPending]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
-      setFeedback({ type: "err", msg: "Informe o e-mail do convidado." });
+      setFeedback({ type: "err", msg: "Informe o e-mail do usuário." });
       return;
     }
     setSubmitting(true);
     setFeedback(null);
     try {
-      const inv = await api.createInvitation(cleanEmail, role);
-      const sent = await api.sendInvitationEmail(inv);
-      if (sent.ok) {
-        setFeedback({
-          type: "ok",
-          msg: `Convite enviado para ${cleanEmail}. Ele receberá o link por e-mail.`,
-        });
-      } else {
-        setFeedback({
-          type: "err",
-          msg: `Convite criado, mas falha ao enviar e-mail: ${sent.error}. Use "Reenviar" abaixo.`,
-        });
-      }
+      const result = await api.addExistingUserByEmail(cleanEmail, role);
+      const who = result.user.name || result.user.email;
+      setFeedback({
+        type: "ok",
+        msg: result.reactivated
+          ? `${who} foi reativado(a) na equipe.`
+          : `${who} foi adicionado(a) à equipe.`,
+      });
       setEmail("");
-      await refreshPending();
-      onInvited();
+      onAdded();
     } catch (err) {
-      setFeedback({ type: "err", msg: err instanceof Error ? err.message : "Falha" });
+      setFeedback({
+        type: "err",
+        msg: err instanceof Error ? err.message : "Falha ao adicionar membro.",
+      });
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function resend(inv: import("@/lib/types").Invitation) {
-    if (!inv.email) return;
-    setResendingId(inv.id);
-    try {
-      const sent = await api.sendInvitationEmail(inv);
-      if (sent.ok) {
-        setFeedback({ type: "ok", msg: `E-mail reenviado para ${inv.email}.` });
-      } else {
-        setFeedback({ type: "err", msg: `Falha ao reenviar: ${sent.error}` });
-      }
-    } finally {
-      setResendingId(null);
-    }
-  }
-
-  async function revoke(id: string) {
-    if (!confirm("Cancelar este convite? O link deixará de funcionar.")) return;
-    try {
-      await api.revokeInvitation(id);
-      await refreshPending();
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
   return (
-    <div className="mb-6 space-y-3">
+    <div className="mb-6">
       <form
         onSubmit={onSubmit}
         className="rounded-md border border-border bg-surface p-4"
       >
         <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Convidar usuário
+          Adicionar membro
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          Informe o e-mail do novo membro e o papel desejado. Enviaremos um link de
-          convite diretamente por e-mail — ao aceitar, ele entra automaticamente
-          no workspace.
+          Informe o e-mail de uma pessoa que já tem conta na plataforma. Ela
+          entrará automaticamente como membro ativo do workspace — sem precisar
+          aceitar convite por e-mail.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
@@ -281,7 +238,7 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
             disabled={submitting}
             className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-60"
           >
-            {submitting ? "Enviando..." : "Enviar convite"}
+            {submitting ? "Adicionando..." : "Adicionar"}
           </button>
         </div>
         {feedback && (
@@ -293,50 +250,11 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
             {feedback.msg}
           </div>
         )}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Quem ainda não tem conta pode se cadastrar em{" "}
+          <span className="font-mono">/register</span> antes de ser adicionado.
+        </p>
       </form>
-
-      {pending.length > 0 && (
-        <div className="rounded-md border border-border bg-surface p-4">
-          <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Convites pendentes ({pending.length})
-          </div>
-          <ul className="space-y-2">
-            {pending.map((inv) => (
-              <li
-                key={inv.id}
-                className="flex items-center gap-2 rounded border border-border bg-surface-2 p-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium text-foreground">
-                    {inv.email || <span className="text-muted-foreground">(sem e-mail)</span>}{" "}
-                    <span className="ml-1.5 rounded bg-surface px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {inv.role}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
-                    Expira em {new Date(inv.expiresAt).toLocaleDateString("pt-BR")}
-                  </div>
-                </div>
-                {inv.email && (
-                  <button
-                    onClick={() => resend(inv)}
-                    disabled={resendingId === inv.id}
-                    className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50"
-                  >
-                    {resendingId === inv.id ? "Reenviando..." : "Reenviar e-mail"}
-                  </button>
-                )}
-                <button
-                  onClick={() => revoke(inv.id)}
-                  className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-destructive/40 hover:text-destructive"
-                >
-                  Cancelar
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
