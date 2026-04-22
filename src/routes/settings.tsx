@@ -358,8 +358,7 @@ function SettingsPanel() {
             </div>
           </form>
         )}
-      </div>
-    </div>
+    </section>
   );
 }
 
