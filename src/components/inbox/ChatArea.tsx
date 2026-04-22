@@ -129,29 +129,44 @@ export function ChatArea({
   }
 
   const isGroup = conversation.type === "GROUP";
+  // Em conversas privadas, somente o agente atribuído pode responder. Grupos
+  // permitem múltiplos atendentes simultaneamente.
+  const assignedToOther =
+    !isGroup &&
+    !!conversation.assignedTo &&
+    !!user &&
+    conversation.assignedTo.id !== user.id;
+  const composerLocked = assignedToOther;
 
   async function handleSend() {
     const content = draft.trim();
     if (!content || sending || !conversation) return;
+    if (composerLocked) return;
     setSending(true);
     setError(null);
     try {
-      // Se a conversa ainda não tem agente, atribui automaticamente ao
-      // próprio usuário antes de enviar — assim ninguém envia mensagem
-      // sem assumir o atendimento.
+      // Em conversas privadas sem agente, atribui automaticamente ao próprio
+      // usuário antes de enviar — assim ninguém envia mensagem sem assumir o
+      // atendimento. Em grupos não atribuímos automaticamente, pois grupos
+      // são compartilhados.
       const wasUnassigned = !conversation.assignedTo;
-      if (wasUnassigned) {
+      if (wasUnassigned && !isGroup) {
         await api.assignConversation(conversation.id);
       }
       await api.sendMessage(conversation.id, content);
       setDraft("");
       onSent();
-      if (wasUnassigned) onAssigned();
+      if (wasUnassigned && !isGroup) onAssigned();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao enviar");
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleTakeOver() {
+    if (!conversation) return;
+    await withBusy(() => api.assignConversation(conversation.id));
   }
 
   async function withBusy(fn: () => Promise<unknown>) {
