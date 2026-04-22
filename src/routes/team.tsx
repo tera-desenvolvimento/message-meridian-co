@@ -83,7 +83,7 @@ function TeamPanel() {
           </div>
         </div>
 
-        {isAdmin && <InviteForm onInvited={refresh} />}
+        {isAdmin && <AddMemberForm onAdded={refresh} />}
 
         {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
