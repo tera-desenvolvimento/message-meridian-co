@@ -52,11 +52,16 @@ export function MessageBlock({ message }: { message: Message }) {
             : "rounded-bl-sm bg-surface text-foreground border border-border",
         )}
       >
-        {/* Sender name — only show for incoming messages so the user can tell
-            contacts apart in group chats. For outgoing messages the bubble
-            color already conveys authorship. */}
-        {!isAgent && (
-          <span className="text-[11px] font-semibold text-primary">
+        {/* Sender name — show for both incoming and outgoing messages so the
+            team can quickly tell which agent replied (and which contact wrote
+            in group chats). */}
+        {message.senderName && (
+          <span
+            className={cn(
+              "text-[11px] font-semibold",
+              isAgent ? "text-primary-foreground/90" : "text-primary",
+            )}
+          >
             {message.senderName}
           </span>
         )}
