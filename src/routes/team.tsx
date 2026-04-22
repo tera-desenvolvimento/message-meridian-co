@@ -169,9 +169,8 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
   const [role, setRole] = useState<UserRole>("AGENT");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState<import("@/lib/types").Invitation[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const refreshPending = useCallback(async () => {
     try {
@@ -188,17 +187,27 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setFeedback({ type: "err", msg: "Informe o e-mail do convidado." });
+      return;
+    }
     setSubmitting(true);
     setFeedback(null);
-    setGeneratedLink(null);
-    setCopied(false);
     try {
-      const inv = await api.createInvitation(email.trim() || null, role);
-      setGeneratedLink(inv.inviteUrl);
-      setFeedback({
-        type: "ok",
-        msg: "Link de convite gerado! Copie e envie ao novo membro.",
-      });
+      const inv = await api.createInvitation(cleanEmail, role);
+      const sent = await api.sendInvitationEmail(inv);
+      if (sent.ok) {
+        setFeedback({
+          type: "ok",
+          msg: `Convite enviado para ${cleanEmail}. Ele receberá o link por e-mail.`,
+        });
+      } else {
+        setFeedback({
+          type: "err",
+          msg: `Convite criado, mas falha ao enviar e-mail: ${sent.error}. Use "Reenviar" abaixo.`,
+        });
+      }
       setEmail("");
       await refreshPending();
       onInvited();
@@ -209,13 +218,18 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
     }
   }
 
-  async function copyLink(url: string) {
+  async function resend(inv: import("@/lib/types").Invitation) {
+    if (!inv.email) return;
+    setResendingId(inv.id);
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // ignore
+      const sent = await api.sendInvitationEmail(inv);
+      if (sent.ok) {
+        setFeedback({ type: "ok", msg: `E-mail reenviado para ${inv.email}.` });
+      } else {
+        setFeedback({ type: "err", msg: `Falha ao reenviar: ${sent.error}` });
+      }
+    } finally {
+      setResendingId(null);
     }
   }
 
@@ -239,16 +253,18 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
           Convidar usuário
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          Gere um link de convite e envie manualmente (WhatsApp, e-mail, etc.). O e-mail é
-          opcional e serve apenas para identificação na listagem.
+          Informe o e-mail do novo membro e o papel desejado. Enviaremos um link de
+          convite diretamente por e-mail — ao aceitar, ele entra automaticamente
+          no workspace.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="email"
-            placeholder="email@empresa.com (opcional)"
+            placeholder="email@empresa.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={submitting}
+            required
             className="h-9 flex-1 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <select
@@ -265,7 +281,7 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
             disabled={submitting}
             className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-60"
           >
-            {submitting ? "Gerando..." : "Gerar link"}
+            {submitting ? "Enviando..." : "Enviar convite"}
           </button>
         </div>
         {feedback && (
@@ -275,28 +291,6 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
             }`}
           >
             {feedback.msg}
-          </div>
-        )}
-        {generatedLink && (
-          <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3">
-            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-              Link de convite (válido por 7 dias)
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                readOnly
-                value={generatedLink}
-                onFocus={(e) => e.currentTarget.select()}
-                className="h-8 flex-1 rounded border border-border bg-background px-2 font-mono text-[11px] text-foreground"
-              />
-              <button
-                type="button"
-                onClick={() => copyLink(generatedLink)}
-                className="h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary-hover"
-              >
-                {copied ? "Copiado!" : "Copiar"}
-              </button>
-            </div>
           </div>
         )}
       </form>
@@ -319,16 +313,19 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
                       {inv.role}
                     </span>
                   </div>
-                  <div className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
-                    {inv.inviteUrl}
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    Expira em {new Date(inv.expiresAt).toLocaleDateString("pt-BR")}
                   </div>
                 </div>
-                <button
-                  onClick={() => copyLink(inv.inviteUrl)}
-                  className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary"
-                >
-                  Copiar
-                </button>
+                {inv.email && (
+                  <button
+                    onClick={() => resend(inv)}
+                    disabled={resendingId === inv.id}
+                    className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                  >
+                    {resendingId === inv.id ? "Reenviando..." : "Reenviar e-mail"}
+                  </button>
+                )}
                 <button
                   onClick={() => revoke(inv.id)}
                   className="shrink-0 rounded border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:border-destructive/40 hover:text-destructive"
