@@ -599,6 +599,39 @@ export const api = {
    * Requires the caller to be ADMIN. The target user must already have a
    * registered account (we look them up by their profile e-mail).
    */
+  /**
+   * Join an existing workspace using the team code (workspace id) shared by
+   * an admin. Adds the current user as an ACTIVE AGENT.
+   */
+  async joinWorkspaceByCode(code: string): Promise<Workspace> {
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) throw createAuthRequiredError();
+
+    const res = await fetch("/api/team/join-by-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ code }),
+    });
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // ignore
+    }
+    if (!res.ok) {
+      throw new Error(json?.error || `Falha ao entrar na equipe (HTTP ${res.status})`);
+    }
+    return {
+      id: json.workspace.id,
+      name: json.workspace.name,
+      createdAt: json.workspace.createdAt,
+    };
+  },
+
   async addExistingUserByEmail(
     email: string,
     role: UserRole,

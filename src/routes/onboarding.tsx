@@ -6,7 +6,7 @@ import { AuthShell, ErrorBox, Field, PrimaryButton } from "@/components/auth/Aut
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Criar workspace — Crmly" }] }),
+  head: () => ({ meta: [{ title: "Entrar na equipe — Crmly" }] }),
   component: OnboardingPage,
 });
 
@@ -21,7 +21,7 @@ function OnboardingPage() {
 function OnboardingInner() {
   const { user, setWorkspace, logout } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +36,7 @@ function OnboardingInner() {
     setError(null);
     setSubmitting(true);
     try {
-      const ws = await api.createWorkspace(name.trim());
+      const ws = await api.joinWorkspaceByCode(code.trim());
       setWorkspace(ws);
       navigate({ to: "/" });
     } catch (err) {
@@ -45,7 +45,7 @@ function OnboardingInner() {
         navigate({ to: "/login" });
         return;
       }
-      setError(err instanceof Error ? err.message : "Falha ao criar workspace");
+      setError(err instanceof Error ? err.message : "Falha ao entrar na equipe");
     } finally {
       setSubmitting(false);
     }
@@ -53,8 +53,8 @@ function OnboardingInner() {
 
   return (
     <AuthShell
-      title="Criar workspace"
-      subtitle="Dê um nome à sua empresa para começar."
+      title="Entrar na equipe"
+      subtitle="Cole o código de equipe que o administrador enviou para você."
       footer={
         <button onClick={logout} className="text-xs text-muted-foreground hover:underline">
           Sair
@@ -64,16 +64,23 @@ function OnboardingInner() {
       <form onSubmit={onSubmit} className="space-y-4">
         <ErrorBox message={error} />
         <Field
-          label="Nome da empresa"
-          placeholder="Ex: Acme Corp"
+          label="Código da equipe"
+          placeholder="cole aqui o código enviado pelo admin"
           required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
           disabled={submitting}
+          autoComplete="off"
+          spellCheck={false}
         />
-        <PrimaryButton type="submit" disabled={submitting || !name.trim()}>
-          {submitting ? "Criando..." : "Criar workspace"}
+        <PrimaryButton type="submit" disabled={submitting || !code.trim()}>
+          {submitting ? "Entrando..." : "Entrar na equipe"}
         </PrimaryButton>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Sua conta foi criada, mas você ainda não faz parte de nenhuma equipe.
+          Peça ao administrador da empresa o <span className="font-medium">código da equipe</span>{" "}
+          para conseguir acessar a plataforma.
+        </p>
       </form>
     </AuthShell>
   );
