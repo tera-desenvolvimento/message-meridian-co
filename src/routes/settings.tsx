@@ -11,6 +11,7 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
+
 interface Integration {
   id?: string;
   api_url: string;
