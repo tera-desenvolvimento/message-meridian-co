@@ -483,13 +483,13 @@ async function maybeFetchProfilePic(params: {
 }
 
 /**
- * Try multiple Whapi endpoints to fetch a profile picture.
+ * Try multiple Whapi endpoints to fetch a profile picture URL.
  * Returns the first non-empty URL found, or null.
  *
- * Endpoints (in order):
- *  - Groups:   GET /groups/{id}/icon  → { icon, icon_full, ... }
- *  - Contacts: GET /contacts/{id}/profile → { profile_pic_full, profile_pic, ... }
- *  - Fallback: GET /chats/{id} → { profile_pic_full, profile_pic, image, ... }
+ * Notes about Whapi quirks:
+ *  - `/contacts/{id}/profile` requires a digits-only ContactID (no `@s.whatsapp.net`).
+ *  - `/groups/{id}/icon` returns a binary JPEG (not JSON). We avoid it here.
+ *  - `/groups/{id}` and `/chats/{id}` return JSON metadata that includes `chat_pic` / `chat_pic_full`.
  */
 export async function fetchWhapiAvatar(params: {
   apiUrl: string;
@@ -504,15 +504,20 @@ export async function fetchWhapiAvatar(params: {
     Accept: "application/json",
   } as const;
 
+  // /contacts/{ContactID}/profile expects digits only (no @s.whatsapp.net).
+  const contactDigits = chatId.split("@")[0]?.replace(/\D+/g, "") ?? "";
+
   const endpoints = isGroup
     ? [
-        `${apiUrl}/groups/${encodeURIComponent(chatId)}/icon`,
+        `${apiUrl}/groups/${encodeURIComponent(chatId)}`,
         `${apiUrl}/chats/${encodeURIComponent(chatId)}`,
       ]
     : [
-        `${apiUrl}/contacts/${encodeURIComponent(chatId)}/profile`,
+        contactDigits
+          ? `${apiUrl}/contacts/${encodeURIComponent(contactDigits)}/profile`
+          : null,
         `${apiUrl}/chats/${encodeURIComponent(chatId)}`,
-      ];
+      ].filter((u): u is string => !!u);
 
   for (const url of endpoints) {
     try {
@@ -521,15 +526,24 @@ export async function fetchWhapiAvatar(params: {
         console.log(`ℹ️ profile pic fetch ${res.status}: ${url}`);
         continue;
       }
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("json")) {
+        // Endpoints that stream raw image bytes (e.g. /groups/{id}/icon) — skip.
+        console.log(`ℹ️ profile pic non-JSON (${ct}): ${url}`);
+        continue;
+      }
       const data = (await res.json()) as Record<string, unknown>;
       const pic =
         (data?.profile_pic_full as string | undefined) ||
         (data?.profile_pic as string | undefined) ||
+        (data?.chat_pic_full as string | undefined) ||
+        (data?.chat_pic as string | undefined) ||
         (data?.icon_full as string | undefined) ||
         (data?.icon as string | undefined) ||
         (data?.image as string | undefined) ||
         null;
       if (pic) return pic;
+      console.log(`ℹ️ profile pic JSON sem url: ${url}`, Object.keys(data));
     } catch (e) {
       console.log(`⚠️ profile pic fetch error: ${url}`, e instanceof Error ? e.message : e);
     }
