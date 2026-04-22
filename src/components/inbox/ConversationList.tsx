@@ -183,6 +183,37 @@ export function ConversationList({
           </button>
         </div>
 
+        {/* Type tabs (Todas / Contatos / Grupos) */}
+        <div className="mb-3 flex items-center gap-1 rounded-md border border-border bg-surface-2/40 p-0.5">
+          {([
+            { id: "ALL", label: "Todas", icon: MessageSquare },
+            { id: "PRIVATE", label: "Contatos", icon: UserRound },
+            { id: "GROUP", label: "Grupos", icon: Users },
+          ] as const).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11px] font-medium transition",
+                  active
+                    ? "bg-surface text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{t.label}</span>
+                <span className="font-mono text-[10px] opacity-60">
+                  {tabCounts[t.id]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
