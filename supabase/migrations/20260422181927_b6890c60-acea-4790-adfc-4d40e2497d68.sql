@@ -1,0 +1,1 @@
+UPDATE public.conversations SET avatar_updated_at = NULL WHERE avatar_url IS NULL;
