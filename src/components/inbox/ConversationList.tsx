@@ -4,6 +4,7 @@ import type { Conversation, ConversationStatus, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { ContactAvatar } from "./ContactAvatar";
+import { WaitingTimer } from "./WaitingTimer";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
 import { useAuth } from "@/lib/auth-context";
@@ -325,6 +326,9 @@ export function ConversationList({
                             <Flag className="h-2.5 w-2.5" />
                             {priorityFlag[prio]!.label}
                           </span>
+                        )}
+                        {c.awaitingReplySince && c.status !== "CLOSED" && (
+                          <WaitingTimer since={c.awaitingReplySince} />
                         )}
                         <span className="ml-auto truncate text-[11px] text-muted-foreground">
                           {c.assignedTo ? (
