@@ -42,12 +42,18 @@ function InboxShell() {
 }
 
 function Inbox() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+
+  // Mantém a versão anterior das conversas para detectar transferências
+  // de atendimento e notificar o agente que perdeu a atribuição.
+  const prevConvsRef = useRef<Conversation[]>([]);
+  const initializedRef = useRef(false);
 
   const refreshConversations = useCallback(async () => {
     try {
