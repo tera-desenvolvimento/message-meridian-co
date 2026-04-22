@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
-import { Search, Inbox, Filter, Plus, Loader2, Flag } from "lucide-react";
-import type { Conversation, ConversationStatus } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check } from "lucide-react";
+import type { Conversation, ConversationStatus, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { ContactAvatar } from "./ContactAvatar";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/http";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -64,18 +73,44 @@ export function ConversationList({
   onSelect,
   onConversationCreated,
 }: Props) {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  // "ALL" = todos, "ME" = atribuídas a mim, "UNASSIGNED" = sem agente,
+  // ou um userId específico de outro agente.
+  const [agentFilter, setAgentFilter] = useState<string>("ALL");
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [newOpen, setNewOpen] = useState(false);
+
+  // Carrega membros do workspace uma vez para alimentar o filtro/dropdown.
+  useEffect(() => {
+    let mounted = true;
+    api
+      .listUsers()
+      .then((list) => {
+        if (mounted) setMembers(list.filter((m) => m.active));
+      })
+      .catch((e) => console.error("Failed to load members for filter", e));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return conversations.filter((c) => {
       if (filter !== "ALL" && c.status !== filter) return false;
+      if (agentFilter === "ME") {
+        if (c.assignedTo?.id !== user?.id) return false;
+      } else if (agentFilter === "UNASSIGNED") {
+        if (c.assignedTo) return false;
+      } else if (agentFilter !== "ALL") {
+        if (c.assignedTo?.id !== agentFilter) return false;
+      }
       if (!q) return true;
       return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
     });
-  }, [conversations, query, filter]);
+  }, [conversations, query, filter, agentFilter, user?.id]);
 
   const counts = useMemo(() => {
     return {
@@ -85,6 +120,29 @@ export function ConversationList({
       CLOSED: conversations.filter((c) => c.status === "CLOSED").length,
     };
   }, [conversations]);
+
+  const agentCounts = useMemo(() => {
+    const byAgent: Record<string, number> = {};
+    let unassigned = 0;
+    let mine = 0;
+    for (const c of conversations) {
+      if (!c.assignedTo) {
+        unassigned++;
+      } else {
+        byAgent[c.assignedTo.id] = (byAgent[c.assignedTo.id] ?? 0) + 1;
+        if (c.assignedTo.id === user?.id) mine++;
+      }
+    }
+    return { byAgent, unassigned, mine };
+  }, [conversations, user?.id]);
+
+  const agentFilterLabel = useMemo(() => {
+    if (agentFilter === "ALL") return "Todos os agentes";
+    if (agentFilter === "ME") return "Atribuídas a mim";
+    if (agentFilter === "UNASSIGNED") return "Sem agente";
+    const m = members.find((x) => x.id === agentFilter);
+    return m ? m.name : "Agente";
+  }, [agentFilter, members]);
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[360px] md:border-r md:border-border lg:w-[400px]">
@@ -136,6 +194,63 @@ export function ConversationList({
               <span className="ml-1 font-mono text-[10px] opacity-60">{counts[f.id]}</span>
             </button>
           ))}
+        </div>
+
+        {/* Agent filter */}
+        <div className="mt-2 flex items-center gap-1">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-between rounded border border-border bg-surface-2/60 px-2 py-1 text-[11px] font-medium text-foreground/80 transition hover:border-border-strong"
+              >
+                <span className="truncate">{agentFilterLabel}</span>
+                <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                  {filtered.length}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Filtrar por agente</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <AgentFilterItem
+                label="Todos os agentes"
+                count={conversations.length}
+                active={agentFilter === "ALL"}
+                onSelect={() => setAgentFilter("ALL")}
+              />
+              <AgentFilterItem
+                label="Atribuídas a mim"
+                count={agentCounts.mine}
+                active={agentFilter === "ME"}
+                onSelect={() => setAgentFilter("ME")}
+              />
+              <AgentFilterItem
+                label="Sem agente"
+                count={agentCounts.unassigned}
+                active={agentFilter === "UNASSIGNED"}
+                onSelect={() => setAgentFilter("UNASSIGNED")}
+              />
+              {members.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Equipe
+                  </DropdownMenuLabel>
+                  {members.map((m) => (
+                    <AgentFilterItem
+                      key={m.id}
+                      label={m.id === user?.id ? `${m.name} (você)` : m.name}
+                      count={agentCounts.byAgent[m.id] ?? 0}
+                      active={agentFilter === m.id}
+                      onSelect={() => setAgentFilter(m.id)}
+                    />
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -371,5 +486,25 @@ function ListSkeleton() {
         </li>
       ))}
     </ul>
+  );
+}
+
+function AgentFilterItem({
+  label,
+  count,
+  active,
+  onSelect,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <DropdownMenuItem onSelect={onSelect} className="flex items-center gap-2">
+      <span className="flex-1 truncate">{label}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
+      {active && <Check className="h-3.5 w-3.5 text-primary" />}
+    </DropdownMenuItem>
   );
 }
