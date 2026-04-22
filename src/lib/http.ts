@@ -62,6 +62,7 @@ function mapConversation(row: {
   status: "OPEN" | "PENDING" | "CLOSED";
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   assigned_to: string | null;
+  avatar_url?: string | null;
   assignee?: { id: string; name: string } | null;
 }): Conversation {
   return {
@@ -74,6 +75,7 @@ function mapConversation(row: {
     status: row.status,
     priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
+    avatarUrl: row.avatar_url ?? null,
   };
 }
 
@@ -83,6 +85,7 @@ function mapMessage(row: {
   content: string;
   from_me: boolean;
   sender_name: string;
+  sender_avatar_url?: string | null;
   created_at: string;
 }): Message {
   return {
@@ -91,6 +94,7 @@ function mapMessage(row: {
     content: row.content,
     fromMe: row.from_me,
     senderName: row.sender_name,
+    senderAvatarUrl: row.sender_avatar_url ?? null,
     createdAt: row.created_at,
     type: "text",
   };

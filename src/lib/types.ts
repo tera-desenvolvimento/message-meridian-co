@@ -17,6 +17,7 @@ export interface Conversation {
   status: ConversationStatus;
   priority: ConversationPriority;
   assignedTo: Assignee | null;
+  avatarUrl: string | null;
 }
 
 export interface Message {
@@ -25,6 +26,7 @@ export interface Message {
   content: string;
   fromMe: boolean;
   senderName: string;
+  senderAvatarUrl: string | null;
   createdAt: string;
   type?: "text" | "image" | "audio";
 }
