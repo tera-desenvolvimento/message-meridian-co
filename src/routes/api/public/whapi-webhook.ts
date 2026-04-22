@@ -434,7 +434,7 @@ async function upsertConversation(params: {
 }
 
 /**
- * Best-effort fetch of a contact's profile picture from Whapi.
+ * Best-effort fetch of a contact's or group's profile picture from Whapi.
  * Skips if the conversation already has an avatar fresher than 7 days,
  * or if the integration is unavailable. Failures are swallowed.
  */
@@ -442,8 +442,9 @@ async function maybeFetchProfilePic(params: {
   conversationId: string;
   chatId: string;
   workspaceId: string;
+  isGroup: boolean;
 }) {
-  const { conversationId, chatId, workspaceId } = params;
+  const { conversationId, chatId, workspaceId, isGroup } = params;
   try {
     const { data: conv } = await supabaseAdmin
       .from("conversations")
@@ -463,24 +464,12 @@ async function maybeFetchProfilePic(params: {
       .maybeSingle();
     if (!integ?.token || integ.enabled === false) return;
 
-    const apiUrl = integ.api_url.replace(/\/$/, "");
-    const url = `${apiUrl}/contacts/${encodeURIComponent(chatId)}/profile`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${integ.token}`,
-        Accept: "application/json",
-      },
+    const pic = await fetchWhapiAvatar({
+      apiUrl: integ.api_url,
+      token: integ.token,
+      chatId,
+      isGroup,
     });
-    if (!res.ok) {
-      console.log("ℹ️ profile pic fetch falhou:", res.status);
-      return;
-    }
-    const json = (await res.json()) as Record<string, unknown>;
-    const pic =
-      (json?.profile_pic_full as string | undefined) ||
-      (json?.profile_pic as string | undefined) ||
-      (json?.image as string | undefined) ||
-      null;
     if (!pic) return;
 
     await supabaseAdmin
@@ -491,6 +480,61 @@ async function maybeFetchProfilePic(params: {
   } catch (e) {
     console.log("⚠️ maybeFetchProfilePic erro:", e instanceof Error ? e.message : e);
   }
+}
+
+/**
+ * Try multiple Whapi endpoints to fetch a profile picture.
+ * Returns the first non-empty URL found, or null.
+ *
+ * Endpoints (in order):
+ *  - Groups:   GET /groups/{id}/icon  → { icon, icon_full, ... }
+ *  - Contacts: GET /contacts/{id}/profile → { profile_pic_full, profile_pic, ... }
+ *  - Fallback: GET /chats/{id} → { profile_pic_full, profile_pic, image, ... }
+ */
+export async function fetchWhapiAvatar(params: {
+  apiUrl: string;
+  token: string;
+  chatId: string;
+  isGroup: boolean;
+}): Promise<string | null> {
+  const { token, chatId, isGroup } = params;
+  const apiUrl = params.apiUrl.replace(/\/$/, "");
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/json",
+  } as const;
+
+  const endpoints = isGroup
+    ? [
+        `${apiUrl}/groups/${encodeURIComponent(chatId)}/icon`,
+        `${apiUrl}/chats/${encodeURIComponent(chatId)}`,
+      ]
+    : [
+        `${apiUrl}/contacts/${encodeURIComponent(chatId)}/profile`,
+        `${apiUrl}/chats/${encodeURIComponent(chatId)}`,
+      ];
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        console.log(`ℹ️ profile pic fetch ${res.status}: ${url}`);
+        continue;
+      }
+      const data = (await res.json()) as Record<string, unknown>;
+      const pic =
+        (data?.profile_pic_full as string | undefined) ||
+        (data?.profile_pic as string | undefined) ||
+        (data?.icon_full as string | undefined) ||
+        (data?.icon as string | undefined) ||
+        (data?.image as string | undefined) ||
+        null;
+      if (pic) return pic;
+    } catch (e) {
+      console.log(`⚠️ profile pic fetch error: ${url}`, e instanceof Error ? e.message : e);
+    }
+  }
+  return null;
 }
 
 function shouldReplaceGroupName(current: string | null | undefined): boolean {
