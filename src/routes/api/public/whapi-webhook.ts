@@ -196,7 +196,9 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               null;
             const conversationAvatar: string | null = isGroup
               ? msg?.chat_image || msg?.chat_picture || payload?.chat?.image || null
-              : senderAvatar;
+              : fromMe
+                ? null // não usar avatar do remetente (nós) para a conversa do contato
+                : senderAvatar;
 
             const content: string =
               msg?.text?.body ||
