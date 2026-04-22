@@ -7,6 +7,7 @@
  * its own filters.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { sendTransactionalEmail } from "@/lib/email/send";
 import type {
   AuthResponse,
   AuthUser,
@@ -381,6 +382,33 @@ export const api = {
     if (error) throw new Error(error.message);
     return mapInvitation(data);
   },
+
+  async sendInvitationEmail(
+    invitation: Invitation,
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!invitation.email) {
+      return { ok: false, error: "Convite sem e-mail definido." };
+    }
+    // Look up workspace name + inviter name for the email body.
+    const wsId = await requireWorkspaceId();
+    const uid = await getSessionUserId();
+    const [{ data: ws }, { data: prof }] = await Promise.all([
+      supabase.from("workspaces").select("name").eq("id", wsId).maybeSingle(),
+      supabase.from("profiles").select("name").eq("id", uid).maybeSingle(),
+    ]);
+    return sendTransactionalEmail({
+      templateName: "team-invitation",
+      recipientEmail: invitation.email,
+      idempotencyKey: `team-invite-${invitation.id}`,
+      templateData: {
+        workspaceName: ws?.name ?? "sua equipe",
+        inviterName: prof?.name ?? undefined,
+        role: invitation.role,
+        inviteUrl: invitation.inviteUrl,
+      },
+    });
+  },
+
 
   async listInvitations(): Promise<Invitation[]> {
     const wsId = await requireWorkspaceId();
