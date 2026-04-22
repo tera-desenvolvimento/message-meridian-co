@@ -254,8 +254,7 @@ function SettingsPanel() {
     : baseWebhookUrl;
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-6 py-8">
+    <section>
         <div className="mb-6">
           <h1 className="text-xl font-semibold tracking-tight">Configurações</h1>
           <p className="mt-1 text-xs text-muted-foreground">
