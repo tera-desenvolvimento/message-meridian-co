@@ -314,7 +314,7 @@ function MemberRow({
               : "border border-border bg-surface-2 text-muted-foreground"
           }`}
         >
-          {member.role}
+          {member.role === "ADMIN" ? "Admin" : "Agente"}
         </span>
       </td>
       <td className="px-4 py-3">

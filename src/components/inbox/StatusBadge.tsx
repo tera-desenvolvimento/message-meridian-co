@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const map: Record<ConversationStatus, { label: string; cls: string; dot: string }> = {
   OPEN: {
-    label: "Open",
+    label: "Aberto",
     cls: "bg-success/10 text-success border-success/30",
     dot: "bg-success",
   },
@@ -13,7 +13,7 @@ const map: Record<ConversationStatus, { label: string; cls: string; dot: string 
     dot: "bg-warning",
   },
   CLOSED: {
-    label: "Closed",
+    label: "Fechado",
     cls: "bg-muted text-muted-foreground border-border-strong",
     dot: "bg-muted-foreground",
   },
@@ -52,7 +52,7 @@ export function TypeTag({ type, className }: { type: "PRIVATE" | "GROUP"; classN
         className,
       )}
     >
-      {type === "GROUP" ? "Group" : "Direct"}
+      {type === "GROUP" ? "Grupo" : "Direto"}
     </span>
   );
 }
@@ -65,9 +65,9 @@ export function PriorityTag({
   className?: string;
 }) {
   const map = {
-    low: { label: "Low", cls: "text-muted-foreground" },
+    low: { label: "Baixa", cls: "text-muted-foreground" },
     normal: { label: "Normal", cls: "text-info" },
-    high: { label: "High", cls: "text-destructive" },
+    high: { label: "Alta", cls: "text-destructive" },
   } as const;
   const s = map[level];
   return (

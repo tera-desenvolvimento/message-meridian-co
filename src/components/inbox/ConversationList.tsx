@@ -37,10 +37,10 @@ interface Props {
 }
 
 const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
-  { id: "ALL", label: "All" },
-  { id: "OPEN", label: "Open" },
+  { id: "ALL", label: "Todas" },
+  { id: "OPEN", label: "Abertas" },
   { id: "PENDING", label: "Aguardando atendimento" },
-  { id: "CLOSED", label: "Closed" },
+  { id: "CLOSED", label: "Fechadas" },
 ];
 
 const priorityBar: Record<"LOW" | "NORMAL" | "HIGH" | "URGENT", string> = {
@@ -57,11 +57,11 @@ const priorityFlag: Record<
   LOW: null,
   NORMAL: null,
   HIGH: {
-    label: "High",
+    label: "Alta",
     className: "border-warning/40 bg-warning/10 text-warning",
   },
   URGENT: {
-    label: "Urgent",
+    label: "Urgente",
     className: "border-destructive/40 bg-destructive/10 text-destructive",
   },
 };
@@ -152,7 +152,7 @@ export function ConversationList({
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary">
             <Inbox className="h-4 w-4" />
           </div>
-          <h1 className="text-sm font-semibold tracking-tight">Inbox</h1>
+          <h1 className="text-sm font-semibold tracking-tight">Caixa de entrada</h1>
           <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {counts.ALL} tickets
           </span>
@@ -171,7 +171,7 @@ export function ConversationList({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tickets, contacts…"
+            placeholder="Buscar tickets, contatos…"
             className="w-full rounded-md border border-border bg-input/60 py-1.5 pl-8 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -260,7 +260,7 @@ export function ConversationList({
           <ListSkeleton />
         ) : filtered.length === 0 ? (
           <div className="px-6 py-12 text-center text-[13px] text-muted-foreground">
-            No tickets match your filters.
+            Nenhum ticket corresponde aos filtros.
           </div>
         ) : (
           <ul>
@@ -335,7 +335,7 @@ export function ConversationList({
                               </span>
                             </>
                           ) : (
-                            <span className="italic text-muted-foreground/70">Unassigned</span>
+                            <span className="italic text-muted-foreground/70">Sem agente</span>
                           )}
                         </span>
                       </div>
