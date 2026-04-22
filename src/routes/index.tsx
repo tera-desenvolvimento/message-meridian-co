@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/http";
 import type { Conversation, Message } from "@/lib/types";
 import { usePolling } from "@/hooks/usePolling";
