@@ -162,22 +162,23 @@ export function ConversationList({
   }, [agentFilter, members]);
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[360px] md:border-r md:border-border lg:w-[400px]">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[340px] md:border-r md:border-border lg:w-[400px]">
       {/* Header */}
-      <div className="shrink-0 border-b border-border px-4 pt-4 pb-3">
+      <div className="shrink-0 border-b border-border px-3 pb-3 pt-3 sm:px-4 sm:pt-4">
         <div className="mb-3 flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary">
             <Inbox className="h-4 w-4" />
           </div>
           <h1 className="text-sm font-semibold tracking-tight">Caixa de entrada</h1>
           <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            {counts.ALL} tickets
+            {counts.ALL}
           </span>
           <button
             type="button"
             onClick={() => setNewOpen(true)}
             title="Nova conversa"
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
+            aria-label="Nova conversa"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
