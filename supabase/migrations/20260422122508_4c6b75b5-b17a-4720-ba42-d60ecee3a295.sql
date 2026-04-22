@@ -1,0 +1,1 @@
+DELETE FROM public.invitations WHERE id = '7e147568-504a-4489-a47e-10ceea381268' AND (token IS NULL OR token = '');
