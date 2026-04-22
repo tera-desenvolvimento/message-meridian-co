@@ -351,7 +351,7 @@ export function ConversationList({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="truncate font-mono text-[10px] text-muted-foreground">
+                          <span className="hidden truncate font-mono text-[10px] text-muted-foreground sm:inline">
                             {formatWhatsappId(c.externalId) || `#${c.id.slice(0, 8).toUpperCase()}`}
                           </span>
                           <span className="truncate text-[13px] font-semibold text-foreground">
