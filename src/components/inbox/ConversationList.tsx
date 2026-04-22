@@ -162,22 +162,23 @@ export function ConversationList({
   }, [agentFilter, members]);
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[360px] md:border-r md:border-border lg:w-[400px]">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[340px] md:border-r md:border-border lg:w-[400px]">
       {/* Header */}
-      <div className="shrink-0 border-b border-border px-4 pt-4 pb-3">
+      <div className="shrink-0 border-b border-border px-3 pb-3 pt-3 sm:px-4 sm:pt-4">
         <div className="mb-3 flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary">
             <Inbox className="h-4 w-4" />
           </div>
           <h1 className="text-sm font-semibold tracking-tight">Caixa de entrada</h1>
           <span className="ml-auto rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            {counts.ALL} tickets
+            {counts.ALL}
           </span>
           <button
             type="button"
             onClick={() => setNewOpen(true)}
             title="Nova conversa"
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
+            aria-label="Nova conversa"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-primary hover:text-primary"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -224,24 +225,30 @@ export function ConversationList({
           />
         </div>
 
-        {/* Filter tabs */}
-        <div className="mt-3 flex items-center gap-1">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={cn(
-                "rounded px-2 py-1 text-[11px] font-medium uppercase tracking-wider transition",
-                filter === f.id
-                  ? "bg-surface-2 text-foreground"
-                  : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
-              )}
-            >
-              {f.label}
-              <span className="ml-1 font-mono text-[10px] opacity-60">{counts[f.id]}</span>
-            </button>
-          ))}
+        {/* Filter tabs — encurta rótulos longos em mobile e permite quebra */}
+        <div className="mt-3 flex flex-wrap items-center gap-1">
+          <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          {FILTERS.map((f) => {
+            const shortLabel =
+              f.id === "PENDING" ? "Aguardando" : f.label;
+            return (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={cn(
+                  "rounded px-2 py-1 text-[11px] font-medium uppercase tracking-wider transition",
+                  filter === f.id
+                    ? "bg-surface-2 text-foreground"
+                    : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+                )}
+              >
+                {shortLabel}
+                <span className="ml-1 font-mono text-[10px] opacity-60">
+                  {counts[f.id]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Agent filter */}
@@ -321,7 +328,7 @@ export function ConversationList({
                     type="button"
                     onClick={() => onSelect(c.id)}
                     className={cn(
-                      "group relative flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition",
+                      "group relative flex w-full items-start gap-2.5 border-b border-border px-3 py-2.5 text-left transition sm:gap-3 sm:px-4 sm:py-3",
                       active ? "bg-surface-2" : "hover:bg-surface-2/60",
                     )}
                   >
@@ -344,7 +351,7 @@ export function ConversationList({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="truncate font-mono text-[10px] text-muted-foreground">
+                          <span className="hidden truncate font-mono text-[10px] text-muted-foreground sm:inline">
                             {formatWhatsappId(c.externalId) || `#${c.id.slice(0, 8).toUpperCase()}`}
                           </span>
                           <span className="truncate text-[13px] font-semibold text-foreground">
@@ -377,7 +384,7 @@ export function ConversationList({
                         {c.awaitingReplySince && c.status !== "CLOSED" && (
                           <WaitingTimer since={c.awaitingReplySince} />
                         )}
-                        <span className="ml-auto truncate text-[11px] text-muted-foreground">
+                        <span className="ml-auto min-w-0 truncate text-[11px] text-muted-foreground">
                           {c.assignedTo ? (
                             <>
                               <span className="text-muted-foreground/70">→ </span>

@@ -204,7 +204,7 @@ export function ChatArea({
     <section className="flex h-full min-h-0 w-full flex-col bg-background">
       {/* HEADER */}
       <header className="z-10 shrink-0 border-b border-border bg-surface">
-        <div className="flex items-center gap-3 px-4 py-3 md:px-6">
+        <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 md:px-6">
           {onBack && (
             <button
               onClick={onBack}
@@ -314,19 +314,21 @@ export function ChatArea({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Assign */}
+            {/* Assign — mostra como ícone em mobile e botão completo em sm+ */}
             <DropdownMenu onOpenChange={(o) => o && void ensureMembers()}>
               <DropdownMenuTrigger asChild>
                 <button
                   disabled={busy}
-                  className="hidden items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60 sm:inline-flex"
+                  title="Atribuir"
+                  aria-label="Atribuir"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60 sm:px-2.5"
                 >
                   {busy ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <UserPlus className="h-3.5 w-3.5" />
                   )}
-                  Atribuir
+                  <span className="hidden sm:inline">Atribuir</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -376,7 +378,7 @@ export function ChatArea({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* More */}
+            {/* More — em mobile concentra Prioridade e Status (escondidos no header) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -387,7 +389,42 @@ export function ChatArea({
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                {/* Prioridade — só aparece em mobile (botão dedicado em sm+) */}
+                <div className="sm:hidden">
+                  <DropdownMenuLabel>Prioridade</DropdownMenuLabel>
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <DropdownMenuItem
+                      key={p.value}
+                      onSelect={() =>
+                        withBusy(() => api.setConversationPriority(conversation.id, p.value))
+                      }
+                      className="flex items-center gap-2"
+                    >
+                      <Flag className={cn("h-3.5 w-3.5", p.cls)} />
+                      <span className="flex-1">{p.label}</span>
+                      {conversation.priority === p.value && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Status</DropdownMenuLabel>
+                  {STATUS_OPTIONS.map((s) => (
+                    <DropdownMenuItem
+                      key={s.value}
+                      onSelect={() =>
+                        withBusy(() => api.setConversationStatus(conversation.id, s.value))
+                      }
+                      className="flex items-center gap-2"
+                    >
+                      <StatusBadge status={s.value} />
+                      <span className="ml-auto">
+                        {conversation.status === s.value && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                </div>
+
                 <DropdownMenuItem
                   onSelect={() =>
                     withBusy(() => api.setConversationStatus(conversation.id, "CLOSED"))
@@ -420,7 +457,7 @@ export function ChatArea({
         </div>
 
         {/* Sub-header: properties strip */}
-        <div className="flex items-center gap-2 border-t border-border bg-surface px-4 py-2 md:px-6">
+        <div className="scrollbar-thin flex items-center gap-3 overflow-x-auto border-t border-border bg-surface px-3 py-2 sm:px-4 md:px-6">
           <PropPill label="Status">
             <StatusBadge status={conversation.status} />
           </PropPill>
@@ -452,7 +489,7 @@ export function ChatArea({
       {/* MESSAGES */}
       <div
         ref={scrollRef}
-        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-4 py-5 md:px-8 md:py-6"
+        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-6"
       >
         {loadingMessages && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -473,7 +510,7 @@ export function ChatArea({
 
       {/* COMPOSER */}
       <div
-        className="shrink-0 border-t border-border bg-surface px-4 py-3 md:px-6"
+        className="shrink-0 border-t border-border bg-surface px-3 py-2.5 sm:px-4 sm:py-3 md:px-6"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto max-w-3xl">
