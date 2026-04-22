@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check } from "lucide-react";
-import type { Conversation, ConversationStatus, TeamMember } from "@/lib/types";
+import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check, Users, UserRound, MessageSquare } from "lucide-react";
+import type { Conversation, ConversationStatus, ConversationType, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { ContactAvatar } from "./ContactAvatar";
@@ -77,6 +77,7 @@ export function ConversationList({
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  const [tab, setTab] = useState<"ALL" | ConversationType>("ALL");
   // "ALL" = todos, "ME" = atribuídas a mim, "UNASSIGNED" = sem agente,
   // ou um userId específico de outro agente.
   const [agentFilter, setAgentFilter] = useState<string>("ALL");
@@ -97,9 +98,16 @@ export function ConversationList({
     };
   }, []);
 
+  // Conversas filtradas pela aba (tipo) — usadas para a lista e para os
+  // contadores de status/agente, para que os números reflitam a aba ativa.
+  const tabScoped = useMemo(() => {
+    if (tab === "ALL") return conversations;
+    return conversations.filter((c) => c.type === tab);
+  }, [conversations, tab]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return conversations.filter((c) => {
+    return tabScoped.filter((c) => {
       if (filter !== "ALL" && c.status !== filter) return false;
       if (agentFilter === "ME") {
         if (c.assignedTo?.id !== user?.id) return false;
@@ -111,22 +119,30 @@ export function ConversationList({
       if (!q) return true;
       return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
     });
-  }, [conversations, query, filter, agentFilter, user?.id]);
+  }, [tabScoped, query, filter, agentFilter, user?.id]);
+
+  const tabCounts = useMemo(() => {
+    return {
+      ALL: conversations.length,
+      PRIVATE: conversations.filter((c) => c.type === "PRIVATE").length,
+      GROUP: conversations.filter((c) => c.type === "GROUP").length,
+    };
+  }, [conversations]);
 
   const counts = useMemo(() => {
     return {
-      ALL: conversations.length,
-      OPEN: conversations.filter((c) => c.status === "OPEN").length,
-      PENDING: conversations.filter((c) => c.status === "PENDING").length,
-      CLOSED: conversations.filter((c) => c.status === "CLOSED").length,
+      ALL: tabScoped.length,
+      OPEN: tabScoped.filter((c) => c.status === "OPEN").length,
+      PENDING: tabScoped.filter((c) => c.status === "PENDING").length,
+      CLOSED: tabScoped.filter((c) => c.status === "CLOSED").length,
     };
-  }, [conversations]);
+  }, [tabScoped]);
 
   const agentCounts = useMemo(() => {
     const byAgent: Record<string, number> = {};
     let unassigned = 0;
     let mine = 0;
-    for (const c of conversations) {
+    for (const c of tabScoped) {
       if (!c.assignedTo) {
         unassigned++;
       } else {
@@ -135,7 +151,7 @@ export function ConversationList({
       }
     }
     return { byAgent, unassigned, mine };
-  }, [conversations, user?.id]);
+  }, [tabScoped, user?.id]);
 
   const agentFilterLabel = useMemo(() => {
     if (agentFilter === "ALL") return "Todos os agentes";
@@ -165,6 +181,37 @@ export function ConversationList({
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
+        </div>
+
+        {/* Type tabs (Todas / Contatos / Grupos) */}
+        <div className="mb-3 flex items-center gap-1 rounded-md border border-border bg-surface-2/40 p-0.5">
+          {([
+            { id: "ALL", label: "Todas", icon: MessageSquare },
+            { id: "PRIVATE", label: "Contatos", icon: UserRound },
+            { id: "GROUP", label: "Grupos", icon: Users },
+          ] as const).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11px] font-medium transition",
+                  active
+                    ? "bg-surface text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{t.label}</span>
+                <span className="font-mono text-[10px] opacity-60">
+                  {tabCounts[t.id]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="relative">
