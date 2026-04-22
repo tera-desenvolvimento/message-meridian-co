@@ -73,18 +73,44 @@ export function ConversationList({
   onSelect,
   onConversationCreated,
 }: Props) {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  // "ALL" = todos, "ME" = atribuídas a mim, "UNASSIGNED" = sem agente,
+  // ou um userId específico de outro agente.
+  const [agentFilter, setAgentFilter] = useState<string>("ALL");
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [newOpen, setNewOpen] = useState(false);
+
+  // Carrega membros do workspace uma vez para alimentar o filtro/dropdown.
+  useEffect(() => {
+    let mounted = true;
+    api
+      .listUsers()
+      .then((list) => {
+        if (mounted) setMembers(list.filter((m) => m.active));
+      })
+      .catch((e) => console.error("Failed to load members for filter", e));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return conversations.filter((c) => {
       if (filter !== "ALL" && c.status !== filter) return false;
+      if (agentFilter === "ME") {
+        if (c.assignedTo?.id !== user?.id) return false;
+      } else if (agentFilter === "UNASSIGNED") {
+        if (c.assignedTo) return false;
+      } else if (agentFilter !== "ALL") {
+        if (c.assignedTo?.id !== agentFilter) return false;
+      }
       if (!q) return true;
       return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
     });
-  }, [conversations, query, filter]);
+  }, [conversations, query, filter, agentFilter, user?.id]);
 
   const counts = useMemo(() => {
     return {
@@ -94,6 +120,29 @@ export function ConversationList({
       CLOSED: conversations.filter((c) => c.status === "CLOSED").length,
     };
   }, [conversations]);
+
+  const agentCounts = useMemo(() => {
+    const byAgent: Record<string, number> = {};
+    let unassigned = 0;
+    let mine = 0;
+    for (const c of conversations) {
+      if (!c.assignedTo) {
+        unassigned++;
+      } else {
+        byAgent[c.assignedTo.id] = (byAgent[c.assignedTo.id] ?? 0) + 1;
+        if (c.assignedTo.id === user?.id) mine++;
+      }
+    }
+    return { byAgent, unassigned, mine };
+  }, [conversations, user?.id]);
+
+  const agentFilterLabel = useMemo(() => {
+    if (agentFilter === "ALL") return "Todos os agentes";
+    if (agentFilter === "ME") return "Atribuídas a mim";
+    if (agentFilter === "UNASSIGNED") return "Sem agente";
+    const m = members.find((x) => x.id === agentFilter);
+    return m ? m.name : "Agente";
+  }, [agentFilter, members]);
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-surface md:w-[360px] md:border-r md:border-border lg:w-[400px]">
