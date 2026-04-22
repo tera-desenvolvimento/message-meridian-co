@@ -247,6 +247,9 @@ export type Database = {
           external_id: string | null
           from_me: boolean
           id: string
+          media_mime_type: string | null
+          media_type: string | null
+          media_url: string | null
           sender_avatar_url: string | null
           sender_name: string
           sender_phone: string | null
@@ -258,6 +261,9 @@ export type Database = {
           external_id?: string | null
           from_me?: boolean
           id?: string
+          media_mime_type?: string | null
+          media_type?: string | null
+          media_url?: string | null
           sender_avatar_url?: string | null
           sender_name?: string
           sender_phone?: string | null
@@ -269,6 +275,9 @@ export type Database = {
           external_id?: string | null
           from_me?: boolean
           id?: string
+          media_mime_type?: string | null
+          media_type?: string | null
+          media_url?: string | null
           sender_avatar_url?: string | null
           sender_name?: string
           sender_phone?: string | null
