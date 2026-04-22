@@ -23,6 +23,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiWhapiStartConversationRouteImport } from './routes/api/whapi/start-conversation'
 import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
+import { Route as ApiWhapiRefreshAvatarsRouteImport } from './routes/api/whapi/refresh-avatars'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
 import { Route as ApiPublicAcceptInviteRouteImport } from './routes/api/public/accept-invite'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -100,6 +101,11 @@ const ApiWhapiSendRoute = ApiWhapiSendRouteImport.update({
   path: '/api/whapi/send',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhapiRefreshAvatarsRoute = ApiWhapiRefreshAvatarsRouteImport.update({
+  id: '/api/whapi/refresh-avatars',
+  path: '/api/whapi/refresh-avatars',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhapiWebhookRoute = ApiPublicWhapiWebhookRouteImport.update({
   id: '/api/public/whapi-webhook',
   path: '/api/public/whapi-webhook',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
+  '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
+    | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
+  ApiWhapiRefreshAvatarsRoute: typeof ApiWhapiRefreshAvatarsRoute
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -381,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWhapiSendRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whapi/refresh-avatars': {
+      id: '/api/whapi/refresh-avatars'
+      path: '/api/whapi/refresh-avatars'
+      fullPath: '/api/whapi/refresh-avatars'
+      preLoaderRoute: typeof ApiWhapiRefreshAvatarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whapi-webhook': {
       id: '/api/public/whapi-webhook'
       path: '/api/public/whapi-webhook'
@@ -433,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
+  ApiWhapiRefreshAvatarsRoute: ApiWhapiRefreshAvatarsRoute,
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,

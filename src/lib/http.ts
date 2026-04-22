@@ -528,6 +528,28 @@ export const api = {
     };
   },
 
+  /**
+   * Best-effort backfill of WhatsApp profile pictures for the current
+   * workspace. Safe to call on app load — server caps the work per call
+   * and skips conversations whose avatars are still fresh.
+   */
+  async refreshAvatars(): Promise<{ refreshed: number; skipped: number }> {
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) return { refreshed: 0, skipped: 0 };
+    try {
+      const res = await fetch("/api/whapi/refresh-avatars", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return { refreshed: 0, skipped: 0 };
+      const json = (await res.json()) as { refreshed?: number; skipped?: number };
+      return { refreshed: json.refreshed ?? 0, skipped: json.skipped ?? 0 };
+    } catch {
+      return { refreshed: 0, skipped: 0 };
+    }
+  },
+
   async removeUser(userId: string): Promise<{ ok: true }> {
     const wsId = await requireWorkspaceId();
     const { error } = await supabase
