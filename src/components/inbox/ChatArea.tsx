@@ -54,9 +54,9 @@ interface Props {
 }
 
 const STATUS_OPTIONS: { value: ConversationStatus; label: string }[] = [
-  { value: "OPEN", label: "Open" },
+  { value: "OPEN", label: "Aberto" },
   { value: "PENDING", label: "Aguardando atendimento" },
-  { value: "CLOSED", label: "Closed" },
+  { value: "CLOSED", label: "Fechado" },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -64,10 +64,10 @@ const PRIORITY_OPTIONS: {
   label: string;
   cls: string;
 }[] = [
-  { value: "LOW", label: "Low", cls: "text-muted-foreground" },
+  { value: "LOW", label: "Baixa", cls: "text-muted-foreground" },
   { value: "NORMAL", label: "Normal", cls: "text-info" },
-  { value: "HIGH", label: "High", cls: "text-warning" },
-  { value: "URGENT", label: "Urgent", cls: "text-destructive" },
+  { value: "HIGH", label: "Alta", cls: "text-warning" },
+  { value: "URGENT", label: "Urgente", cls: "text-destructive" },
 ];
 
 export function ChatArea({
@@ -116,9 +116,9 @@ export function ChatArea({
           <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground">
             <Send className="h-4 w-4" />
           </div>
-          <h2 className="text-sm font-semibold tracking-tight">No ticket selected</h2>
+          <h2 className="text-sm font-semibold tracking-tight">Nenhum ticket selecionado</h2>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            Pick a conversation from the inbox to start working.
+            Escolha uma conversa na caixa de entrada para começar a atender.
           </p>
         </div>
       </section>
@@ -137,7 +137,7 @@ export function ChatArea({
       setDraft("");
       onSent();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to send");
+      setError(e instanceof Error ? e.message : "Falha ao enviar");
     } finally {
       setSending(false);
     }
@@ -151,7 +151,7 @@ export function ChatArea({
       await fn();
       onAssigned();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Action failed");
+      setError(e instanceof Error ? e.message : "Falha na ação");
     } finally {
       setBusy(false);
     }
@@ -166,7 +166,7 @@ export function ChatArea({
       setConfirmDelete(false);
       onDeleted?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete");
+      setError(e instanceof Error ? e.message : "Falha ao excluir");
     } finally {
       setBusy(false);
     }
@@ -183,7 +183,7 @@ export function ChatArea({
             <button
               onClick={onBack}
               className="-ml-1 rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground md:hidden"
-              aria-label="Back"
+              aria-label="Voltar"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
@@ -210,17 +210,17 @@ export function ChatArea({
               <span>
                 {conversation.assignedTo ? (
                   <>
-                    Assigned to{" "}
+                    Atribuído a{" "}
                     <span className="font-medium text-foreground/80">
                       {conversation.assignedTo.name}
                     </span>
                   </>
                 ) : (
-                  <span className="italic">Unassigned</span>
+                  <span className="italic">Sem agente</span>
                 )}
               </span>
               <span className="text-border-strong">•</span>
-              <span>{messages.length} messages</span>
+              <span>{messages.length} mensagens</span>
             </div>
           </div>
 
@@ -235,11 +235,11 @@ export function ChatArea({
                   )}
                 >
                   <Flag className={cn("h-3.5 w-3.5", currentPriority?.cls)} />
-                  {currentPriority?.label ?? "Priority"}
+                  {currentPriority?.label ?? "Prioridade"}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>Set priority</DropdownMenuLabel>
+                <DropdownMenuLabel>Definir prioridade</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {PRIORITY_OPTIONS.map((p) => (
                   <DropdownMenuItem
@@ -269,7 +269,7 @@ export function ChatArea({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>Change status</DropdownMenuLabel>
+                <DropdownMenuLabel>Alterar status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {STATUS_OPTIONS.map((s) => (
                   <DropdownMenuItem
@@ -300,18 +300,18 @@ export function ChatArea({
                   ) : (
                     <UserPlus className="h-3.5 w-3.5" />
                   )}
-                  Assign
+                  Atribuir
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Assign to</DropdownMenuLabel>
+                <DropdownMenuLabel>Atribuir a</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => withBusy(() => api.assignConversation(conversation.id))}
                   className="flex items-center gap-2"
                 >
                   <UserPlus className="h-3.5 w-3.5" />
-                  Assign to me
+                  Atribuir a mim
                 </DropdownMenuItem>
                 {conversation.assignedTo && (
                   <DropdownMenuItem
@@ -319,14 +319,14 @@ export function ChatArea({
                     className="flex items-center gap-2"
                   >
                     <UserMinus className="h-3.5 w-3.5" />
-                    Unassign
+                    Remover atribuição
                   </DropdownMenuItem>
                 )}
                 {members.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Team members
+                      Membros da equipe
                     </DropdownMenuLabel>
                     {members.map((m) => (
                       <DropdownMenuItem
@@ -356,7 +356,7 @@ export function ChatArea({
                 <button
                   disabled={busy}
                   className="rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground disabled:opacity-60"
-                  aria-label="More"
+                  aria-label="Mais"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
@@ -369,7 +369,7 @@ export function ChatArea({
                   className="flex items-center gap-2"
                 >
                   <Check className="h-3.5 w-3.5" />
-                  Mark as closed
+                  Marcar como fechado
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() =>
@@ -378,7 +378,7 @@ export function ChatArea({
                   className="flex items-center gap-2"
                 >
                   <ChevronDown className="h-3.5 w-3.5" />
-                  Reopen
+                  Reabrir
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -386,7 +386,7 @@ export function ChatArea({
                   className="flex items-center gap-2 text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Delete conversation
+                  Excluir conversa
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -398,7 +398,7 @@ export function ChatArea({
           <PropPill label="Status">
             <StatusBadge status={conversation.status} />
           </PropPill>
-          <PropPill label="Priority">
+          <PropPill label="Prioridade">
             <span
               className={cn(
                 "inline-flex items-center gap-1 text-[11px] font-medium",
@@ -409,10 +409,10 @@ export function ChatArea({
               {currentPriority?.label}
             </span>
           </PropPill>
-          <PropPill label="Type">
+          <PropPill label="Tipo">
             <TypeTag type={conversation.type} />
           </PropPill>
-          <PropPill label="Channel">
+          <PropPill label="Canal">
             <span className="text-[11px] font-medium text-foreground/80">WhatsApp</span>
           </PropPill>
         </div>
@@ -425,11 +425,11 @@ export function ChatArea({
       >
         {loadingMessages && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading thread…
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando conversa…
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
-            No messages yet.
+            Nenhuma mensagem ainda.
           </div>
         ) : (
           <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
@@ -458,13 +458,13 @@ export function ChatArea({
                 }
               }}
               rows={2}
-              placeholder="Reply as agent…  (Enter to send, Shift+Enter for newline)"
+              placeholder="Responder como agente…  (Enter para enviar, Shift+Enter para nova linha)"
               className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
               <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                 <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
-                  Reply
+                  Resposta
                 </span>
                 <span className="hidden sm:inline">via WhatsApp</span>
               </div>
@@ -481,7 +481,7 @@ export function ChatArea({
                 ) : (
                   <Send className="h-3.5 w-3.5" />
                 )}
-                Send
+                Enviar
               </button>
             </div>
           </div>
@@ -491,14 +491,14 @@ export function ChatArea({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir esta conversa?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the conversation and all its messages. This action
-              cannot be undone.
+              Isso vai excluir permanentemente a conversa e todas as mensagens. Esta ação
+              não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -507,7 +507,7 @@ export function ChatArea({
               disabled={busy}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {busy ? "Deleting…" : "Delete"}
+              {busy ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
