@@ -174,6 +174,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               ? msg?.chat_name || payload?.chat?.name || null
               : msg?.from_name || msg?.push_name || msg?.chat_name || (contactDigits ? `+${contactDigits}` : "Contato");
 
+            // Profile picture (avatar) — Whapi sometimes includes these inline
+            const senderAvatar: string | null =
+              msg?.from_image ||
+              msg?.from_picture ||
+              msg?.profile_picture ||
+              msg?.profile_pic ||
+              msg?.image ||
+              null;
+            const conversationAvatar: string | null = isGroup
+              ? msg?.chat_image || msg?.chat_picture || payload?.chat?.image || null
+              : senderAvatar;
+
             const content: string =
               msg?.text?.body ||
               msg?.caption ||
@@ -193,8 +205,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               externalId: chatId,
               isGroup,
               name: conversationName,
+              avatarUrl: conversationAvatar,
             });
             console.log("💬 CONVERSA:", { id: conversationId });
+
+            // Best-effort: fetch profile picture from Whapi if we don't have one yet
+            if (!fromMe && integ?.enabled !== false) {
+              void maybeFetchProfilePic({
+                conversationId,
+                chatId,
+                workspaceId: workspace.id,
+              });
+            }
 
             console.log("💾 Salvando mensagem...", {
               conversationId,
@@ -212,6 +234,7 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
                 from_me: fromMe,
                 sender_name: senderName,
                 sender_phone: contactDigits || null,
+                sender_avatar_url: senderAvatar,
                 external_id: externalMsgId ?? null,
               })
               .select("id")
