@@ -46,10 +46,10 @@ export function MessageBlock({ message }: { message: Message }) {
 
       <div
         className={cn(
-          "flex max-w-[75%] flex-col gap-1 rounded-2xl px-3 py-2 shadow-sm sm:max-w-[65%]",
+          "flex min-w-0 max-w-[85%] flex-col gap-1 rounded-2xl px-3 py-2 shadow-sm sm:max-w-[75%] lg:max-w-[65%]",
           isAgent
             ? "rounded-br-sm bg-primary text-primary-foreground"
-            : "rounded-bl-sm bg-surface text-foreground border border-border",
+            : "rounded-bl-sm border border-border bg-surface text-foreground",
         )}
       >
         {/* Sender name — show for both incoming and outgoing messages so the
