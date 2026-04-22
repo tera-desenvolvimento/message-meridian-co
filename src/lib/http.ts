@@ -495,7 +495,7 @@ export const api = {
 
   async updateOwnProfile(input: { name?: string; signature?: string | null }): Promise<{ ok: true }> {
     const uid = await getSessionUserId();
-    const patch: Record<string, unknown> = {};
+    const patch: { name?: string; signature?: string | null } = {};
     if (typeof input.name === "string") patch.name = input.name;
     if (input.signature !== undefined) {
       const sig = (input.signature ?? "").trim();
