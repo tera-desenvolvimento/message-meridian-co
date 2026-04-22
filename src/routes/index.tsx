@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/http";
 import type { Conversation, Message } from "@/lib/types";
 import { usePolling } from "@/hooks/usePolling";
@@ -41,12 +42,18 @@ function InboxShell() {
 }
 
 function Inbox() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+
+  // Mantém a versão anterior das conversas para detectar transferências
+  // de atendimento e notificar o agente que perdeu a atribuição.
+  const prevConvsRef = useRef<Conversation[]>([]);
+  const initializedRef = useRef(false);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -99,6 +106,45 @@ function Inbox() {
       void supabase.removeChannel(channel);
     };
   }, [refreshConversations]);
+
+  // Detecta transferência de atendimento: se uma conversa estava atribuída
+  // a mim e passou para outro agente, notifico via toast. Também avisa
+  // quando alguém me atribui uma conversa.
+  useEffect(() => {
+    if (!user) return;
+    if (!initializedRef.current) {
+      // Primeira carga: apenas registra o snapshot, sem notificar.
+      if (conversations.length > 0 || !loadingConvs) {
+        prevConvsRef.current = conversations;
+        initializedRef.current = true;
+      }
+      return;
+    }
+    const prevById = new Map(prevConvsRef.current.map((c) => [c.id, c]));
+    for (const curr of conversations) {
+      const prev = prevById.get(curr.id);
+      if (!prev) continue;
+      const prevAssigneeId = prev.assignedTo?.id ?? null;
+      const currAssigneeId = curr.assignedTo?.id ?? null;
+      if (prevAssigneeId === currAssigneeId) continue;
+
+      // Eu era o agente e perdi a atribuição.
+      if (prevAssigneeId === user.id && currAssigneeId !== user.id) {
+        const newName = curr.assignedTo?.name ?? "outro agente";
+        toast.info(
+          `Conversa com ${curr.name} foi transferida para ${newName}.`,
+        );
+      }
+      // Alguém me atribuiu a conversa (e não fui eu mesmo via UI).
+      else if (currAssigneeId === user.id && prevAssigneeId && prevAssigneeId !== user.id) {
+        const oldName = prev.assignedTo?.name ?? "outro agente";
+        toast.success(
+          `${oldName} transferiu a conversa com ${curr.name} para você.`,
+        );
+      }
+    }
+    prevConvsRef.current = conversations;
+  }, [conversations, user, loadingConvs]);
 
   useEffect(() => {
     if (!selectedId) {
