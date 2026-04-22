@@ -37,7 +37,7 @@ export function AppHeader() {
           <span className="text-sm font-semibold tracking-tight">{workspace?.name ?? "Crmly"}</span>
         </div>
         <nav className="flex items-center gap-1">
-          {navItem("/", "Inbox")}
+          {navItem("/", "Caixa de entrada")}
           {navItem("/team", "Equipe")}
           {navItem("/settings", "Configurações")}
         </nav>
