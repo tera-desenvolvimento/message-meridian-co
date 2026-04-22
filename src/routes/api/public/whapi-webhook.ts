@@ -389,7 +389,7 @@ async function upsertConversation(params: {
   if (selErr) console.log("⚠️ Erro buscando conversa:", selErr);
   if (existing) {
     console.log("📁 Conversa existente encontrada:", existing.id, "name:", existing.name);
-    const updates: Record<string, unknown> = {};
+    const updates: { name?: string; avatar_url?: string; avatar_updated_at?: string } = {};
     if (isGroup && name && shouldReplaceGroupName(existing.name)) {
       updates.name = name;
     }
