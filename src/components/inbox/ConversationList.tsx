@@ -195,6 +195,63 @@ export function ConversationList({
             </button>
           ))}
         </div>
+
+        {/* Agent filter */}
+        <div className="mt-2 flex items-center gap-1">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-between rounded border border-border bg-surface-2/60 px-2 py-1 text-[11px] font-medium text-foreground/80 transition hover:border-border-strong"
+              >
+                <span className="truncate">{agentFilterLabel}</span>
+                <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                  {filtered.length}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Filtrar por agente</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <AgentFilterItem
+                label="Todos os agentes"
+                count={conversations.length}
+                active={agentFilter === "ALL"}
+                onSelect={() => setAgentFilter("ALL")}
+              />
+              <AgentFilterItem
+                label="Atribuídas a mim"
+                count={agentCounts.mine}
+                active={agentFilter === "ME"}
+                onSelect={() => setAgentFilter("ME")}
+              />
+              <AgentFilterItem
+                label="Sem agente"
+                count={agentCounts.unassigned}
+                active={agentFilter === "UNASSIGNED"}
+                onSelect={() => setAgentFilter("UNASSIGNED")}
+              />
+              {members.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Equipe
+                  </DropdownMenuLabel>
+                  {members.map((m) => (
+                    <AgentFilterItem
+                      key={m.id}
+                      label={m.id === user?.id ? `${m.name} (você)` : m.name}
+                      count={agentCounts.byAgent[m.id] ?? 0}
+                      active={agentFilter === m.id}
+                      onSelect={() => setAgentFilter(m.id)}
+                    />
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* List */}
