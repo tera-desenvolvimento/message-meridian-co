@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -28,6 +29,11 @@ import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lova
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/team'
+    | '/unsubscribe'
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/team'
+    | '/unsubscribe'
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/team'
+    | '/unsubscribe'
     | '/email/unsubscribe'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
@@ -270,6 +283,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/team': {
       id: '/team'
       path: '/team'
@@ -409,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
