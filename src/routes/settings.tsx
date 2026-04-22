@@ -33,10 +33,145 @@ function SettingsPage() {
     <AuthGuard>
       <div className="flex h-dvh flex-col bg-background text-foreground">
         <AppHeader />
-        <SettingsPanel />
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl space-y-8 px-6 py-8">
+            <AccountSection />
+            <IntegrationSection />
+          </div>
+        </div>
       </div>
     </AuthGuard>
   );
+}
+
+function AccountSection() {
+  const { user, refresh } = useAuth();
+  const [name, setName] = useState(user?.name ?? "");
+  const [signature, setSignature] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const prof = await api.getOwnProfile();
+        if (!mounted) return;
+        setName(prof.name);
+        setSignature(prof.signature);
+      } catch {
+        // ignore
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function onSave(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setFeedback(null);
+    try {
+      await api.updateOwnProfile({ name: name.trim(), signature });
+      setFeedback({ type: "ok", msg: "Conta atualizada." });
+      await refresh();
+    } catch (err) {
+      setFeedback({
+        type: "err",
+        msg: err instanceof Error ? err.message : "Erro ao salvar.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const previewSignature = signature.trim() || `*${name.trim() || "Seu nome"}:*`;
+
+  return (
+    <section>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight">Minha conta</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Atualize seus dados e personalize a assinatura usada nas mensagens enviadas.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
+          Carregando...
+        </div>
+      ) : (
+        <form onSubmit={onSave} className="space-y-6">
+          <div className="rounded-md border border-border bg-surface p-5 space-y-4">
+            <Field
+              label="Nome"
+              value={name}
+              onChange={setName}
+              placeholder="Seu nome"
+            />
+
+            <div>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Assinatura nas mensagens
+              </label>
+              <textarea
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder={`*${name || "Seu nome"}:*`}
+                rows={3}
+                className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                Este texto aparece no início de cada mensagem que você envia. Use{" "}
+                <code className="rounded bg-surface-2 px-1">*texto*</code> para negrito.
+                Deixe em branco para usar o padrão{" "}
+                <code className="rounded bg-surface-2 px-1">*Seu nome:*</code>.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Pré-visualização
+              </label>
+              <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm whitespace-pre-wrap font-mono">
+                {previewSignature}
+                {"\n"}
+                <span className="text-muted-foreground">Olá! Como posso ajudar?</span>
+              </div>
+            </div>
+          </div>
+
+          {feedback && (
+            <div
+              className={`text-xs ${
+                feedback.type === "ok" ? "text-success" : "text-destructive"
+              }`}
+            >
+              {feedback.msg}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-60"
+            >
+              {saving ? "Salvando..." : "Salvar conta"}
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
+
+function IntegrationSection() {
+  return <SettingsPanel />;
 }
 
 function SettingsPanel() {
