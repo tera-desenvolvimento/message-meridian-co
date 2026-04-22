@@ -19,6 +19,7 @@ import type {
   TeamMember,
 } from "@/lib/types";
 import { api } from "@/lib/http";
+import { useAuth } from "@/lib/auth-context";
 import { formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { MessageBlock } from "./MessageBlock";
@@ -80,6 +81,7 @@ export function ChatArea({
   onDeleted,
   onBack,
 }: Props) {
+  const { user } = useAuth();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -127,29 +129,44 @@ export function ChatArea({
   }
 
   const isGroup = conversation.type === "GROUP";
+  // Em conversas privadas, somente o agente atribuído pode responder. Grupos
+  // permitem múltiplos atendentes simultaneamente.
+  const assignedToOther =
+    !isGroup &&
+    !!conversation.assignedTo &&
+    !!user &&
+    conversation.assignedTo.id !== user.id;
+  const composerLocked = assignedToOther;
 
   async function handleSend() {
     const content = draft.trim();
     if (!content || sending || !conversation) return;
+    if (composerLocked) return;
     setSending(true);
     setError(null);
     try {
-      // Se a conversa ainda não tem agente, atribui automaticamente ao
-      // próprio usuário antes de enviar — assim ninguém envia mensagem
-      // sem assumir o atendimento.
+      // Em conversas privadas sem agente, atribui automaticamente ao próprio
+      // usuário antes de enviar — assim ninguém envia mensagem sem assumir o
+      // atendimento. Em grupos não atribuímos automaticamente, pois grupos
+      // são compartilhados.
       const wasUnassigned = !conversation.assignedTo;
-      if (wasUnassigned) {
+      if (wasUnassigned && !isGroup) {
         await api.assignConversation(conversation.id);
       }
       await api.sendMessage(conversation.id, content);
       setDraft("");
       onSent();
-      if (wasUnassigned) onAssigned();
+      if (wasUnassigned && !isGroup) onAssigned();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao enviar");
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleTakeOver() {
+    if (!conversation) return;
+    await withBusy(() => api.assignConversation(conversation.id));
   }
 
   async function withBusy(fn: () => Promise<unknown>) {
@@ -461,57 +478,96 @@ export function ChatArea({
       >
         <div className="mx-auto max-w-3xl">
           {error && <p className="mb-2 text-[12px] text-destructive">{error}</p>}
-          {!conversation.assignedTo && (
-            <div className="mb-2 flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning">
-              <UserPlus className="h-3.5 w-3.5 shrink-0" />
-              <span>
-                Esta conversa está <strong>sem agente</strong>. Ao enviar uma mensagem
-                ela será atribuída automaticamente a você.
-              </span>
-            </div>
-          )}
-          <div className="rounded-md border border-border bg-input/40 transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              rows={2}
-              placeholder={
-                conversation.assignedTo
-                  ? "Responder como agente…  (Enter para enviar, Shift+Enter para nova linha)"
-                  : "Digite para assumir esta conversa e responder…"
-              }
-              className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-            <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
-              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
-                  Resposta
+          {composerLocked ? (
+            <div className="flex flex-col gap-2 rounded-md border border-border bg-surface-2 px-3 py-3 text-[12px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <UserMinus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/70" />
+                <span>
+                  Esta conversa está atribuída a{" "}
+                  <strong className="text-foreground">
+                    {conversation.assignedTo?.name}
+                  </strong>
+                  . Você pode visualizar, mas só pode responder após transferir
+                  o atendimento para você.
                 </span>
-                <span className="hidden sm:inline">via WhatsApp</span>
               </div>
               <button
-                onClick={handleSend}
-                disabled={sending || !draft.trim()}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
-                  "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
-                )}
+                onClick={() => void handleTakeOver()}
+                disabled={busy}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-[12px] font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-60"
               >
-                {sending ? (
+                {busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Send className="h-3.5 w-3.5" />
+                  <UserPlus className="h-3.5 w-3.5" />
                 )}
-                Enviar
+                Transferir para mim
               </button>
             </div>
-          </div>
+          ) : (
+            <>
+              {!conversation.assignedTo && !isGroup && (
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning">
+                  <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Esta conversa está <strong>sem agente</strong>. Ao enviar uma
+                    mensagem ela será atribuída automaticamente a você.
+                  </span>
+                </div>
+              )}
+              {isGroup && (
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-muted-foreground">
+                  <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Este é um <strong className="text-foreground">grupo</strong>:
+                    qualquer agente pode responder.
+                  </span>
+                </div>
+              )}
+              <div className="rounded-md border border-border bg-input/40 transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  rows={2}
+                  placeholder={
+                    conversation.assignedTo || isGroup
+                      ? "Responder como agente…  (Enter para enviar, Shift+Enter para nova linha)"
+                      : "Digite para assumir esta conversa e responder…"
+                  }
+                  className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
+                      Resposta
+                    </span>
+                    <span className="hidden sm:inline">via WhatsApp</span>
+                  </div>
+                  <button
+                    onClick={handleSend}
+                    disabled={sending || !draft.trim()}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
+                      "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                  >
+                    {sending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    Enviar
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

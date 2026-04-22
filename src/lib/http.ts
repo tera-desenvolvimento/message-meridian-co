@@ -504,11 +504,23 @@ export const api = {
       patch.signature = sig.length ? sig : null;
     }
     if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await supabase
+
+    // Use upsert so the call still works if the profile row was somehow not
+    // created by the auth trigger (e.g. an account that joined a workspace
+    // by code before any profile write happened). We always force id = uid
+    // so RLS ("Users can update their own profile" / "Users can insert
+    // their own profile") is satisfied.
+    const { data, error } = await supabase
       .from("profiles")
-      .update(patch)
-      .eq("id", uid);
+      .upsert({ id: uid, ...patch }, { onConflict: "id" })
+      .select("id")
+      .maybeSingle();
     if (error) throw error;
+    if (!data) {
+      throw new Error(
+        "Não foi possível salvar o perfil. Faça logout e entre novamente.",
+      );
+    }
     return { ok: true };
   },
 
