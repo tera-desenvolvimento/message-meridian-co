@@ -77,6 +77,14 @@ function Inbox() {
 
   usePolling(refreshConversations, 8000, true);
 
+  // On mount, kick off a best-effort avatar backfill via Whapi.
+  // Server is rate-limited (max 30 per call, only stale/missing).
+  useEffect(() => {
+    void api.refreshAvatars().then((r) => {
+      if (r.refreshed > 0) void refreshConversations();
+    });
+  }, [refreshConversations]);
+
   // Realtime: refresh conversations on any change
   useEffect(() => {
     const channel = supabase
