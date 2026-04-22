@@ -7,6 +7,7 @@
  * its own filters.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { sendTransactionalEmail } from "@/lib/email/send";
 import type {
   AuthResponse,
   AuthUser,
