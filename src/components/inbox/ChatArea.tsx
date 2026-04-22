@@ -133,9 +133,17 @@ export function ChatArea({
     setSending(true);
     setError(null);
     try {
+      // Se a conversa ainda não tem agente, atribui automaticamente ao
+      // próprio usuário antes de enviar — assim ninguém envia mensagem
+      // sem assumir o atendimento.
+      const wasUnassigned = !conversation.assignedTo;
+      if (wasUnassigned) {
+        await api.assignConversation(conversation.id);
+      }
       await api.sendMessage(conversation.id, content);
       setDraft("");
       onSent();
+      if (wasUnassigned) onAssigned();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao enviar");
     } finally {
