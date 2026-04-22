@@ -83,6 +83,8 @@ function TeamPanel() {
           </div>
         </div>
 
+        {isAdmin && <TeamCodeCard />}
+
         {isAdmin && <AddMemberForm onAdded={refresh} />}
 
         {error && (
