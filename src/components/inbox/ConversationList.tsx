@@ -225,24 +225,30 @@ export function ConversationList({
           />
         </div>
 
-        {/* Filter tabs */}
-        <div className="mt-3 flex items-center gap-1">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={cn(
-                "rounded px-2 py-1 text-[11px] font-medium uppercase tracking-wider transition",
-                filter === f.id
-                  ? "bg-surface-2 text-foreground"
-                  : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
-              )}
-            >
-              {f.label}
-              <span className="ml-1 font-mono text-[10px] opacity-60">{counts[f.id]}</span>
-            </button>
-          ))}
+        {/* Filter tabs — encurta rótulos longos em mobile e permite quebra */}
+        <div className="mt-3 flex flex-wrap items-center gap-1">
+          <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          {FILTERS.map((f) => {
+            const shortLabel =
+              f.id === "PENDING" ? "Aguardando" : f.label;
+            return (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={cn(
+                  "rounded px-2 py-1 text-[11px] font-medium uppercase tracking-wider transition",
+                  filter === f.id
+                    ? "bg-surface-2 text-foreground"
+                    : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+                )}
+              >
+                {shortLabel}
+                <span className="ml-1 font-mono text-[10px] opacity-60">
+                  {counts[f.id]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Agent filter */}
