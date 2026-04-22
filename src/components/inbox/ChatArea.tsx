@@ -19,6 +19,7 @@ import type {
   TeamMember,
 } from "@/lib/types";
 import { api } from "@/lib/http";
+import { useAuth } from "@/lib/auth-context";
 import { formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { MessageBlock } from "./MessageBlock";
