@@ -378,7 +378,7 @@ export function ChatArea({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* More */}
+            {/* More — em mobile concentra Prioridade e Status (escondidos no header) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -389,7 +389,42 @@ export function ChatArea({
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                {/* Prioridade — só aparece em mobile (botão dedicado em sm+) */}
+                <div className="sm:hidden">
+                  <DropdownMenuLabel>Prioridade</DropdownMenuLabel>
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <DropdownMenuItem
+                      key={p.value}
+                      onSelect={() =>
+                        withBusy(() => api.setConversationPriority(conversation.id, p.value))
+                      }
+                      className="flex items-center gap-2"
+                    >
+                      <Flag className={cn("h-3.5 w-3.5", p.cls)} />
+                      <span className="flex-1">{p.label}</span>
+                      {conversation.priority === p.value && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Status</DropdownMenuLabel>
+                  {STATUS_OPTIONS.map((s) => (
+                    <DropdownMenuItem
+                      key={s.value}
+                      onSelect={() =>
+                        withBusy(() => api.setConversationStatus(conversation.id, s.value))
+                      }
+                      className="flex items-center gap-2"
+                    >
+                      <StatusBadge status={s.value} />
+                      <span className="ml-auto">
+                        {conversation.status === s.value && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                </div>
+
                 <DropdownMenuItem
                   onSelect={() =>
                     withBusy(() => api.setConversationStatus(conversation.id, "CLOSED"))
