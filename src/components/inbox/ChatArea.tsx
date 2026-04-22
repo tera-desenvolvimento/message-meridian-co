@@ -23,6 +23,7 @@ import { formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
 import { MessageBlock } from "./MessageBlock";
 import { ContactAvatar } from "./ContactAvatar";
+import { WaitingTimer } from "./WaitingTimer";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -423,6 +424,11 @@ export function ChatArea({
           <PropPill label="Canal">
             <span className="text-[11px] font-medium text-foreground/80">WhatsApp</span>
           </PropPill>
+          {conversation.awaitingReplySince && conversation.status !== "CLOSED" && (
+            <PropPill label="Sem resposta">
+              <WaitingTimer since={conversation.awaitingReplySince} />
+            </PropPill>
+          )}
         </div>
       </header>
 
