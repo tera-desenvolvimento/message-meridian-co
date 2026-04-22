@@ -47,7 +47,7 @@ export function AppHeader() {
         <div className="hidden text-right sm:block">
           <div className="text-xs font-medium text-foreground leading-tight">{user?.name}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            {user?.role}
+            {user?.role === "ADMIN" ? "Admin" : "Agente"}
           </div>
         </div>
         <button
