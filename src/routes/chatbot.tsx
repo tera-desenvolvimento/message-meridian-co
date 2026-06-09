@@ -6,8 +6,20 @@ import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { BotEditor } from "@/components/chatbot/BotEditor";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/chatbot")({
   head: () => ({
@@ -175,9 +187,17 @@ function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
 function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () => void, variant?: "default" | "outline" }) {
   const { workspace } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("Novo Fluxo de Chatbot");
+  const [description, setDescription] = useState("");
 
-  const createDefaultFlow = async () => {
+  const createFlow = async () => {
     if (!workspace?.id) return;
+    if (!name.trim()) {
+      toast.error("Por favor, dê um nome ao fluxo.");
+      return;
+    }
+
     setLoading(true);
 
     const defaultDefinition = {
@@ -186,40 +206,8 @@ function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () =>
           id: "start",
           name: "Início",
           type: "message",
-          content: "Olá! Seja bem-vindo ao atendimento da Dohkozap. Como podemos ajudar hoje?",
-          next: "menu"
-        },
-        {
-          id: "menu",
-          name: "Menu Principal",
-          type: "choice",
-          content: "Escolha uma opção digitando o número correspondente:\n\n1. Suporte Técnico\n2. Vendas\n3. Financeiro",
-          options: [
-            { label: "1", next: "human_transfer" },
-            { label: "2", next: "sales_info" },
-            { label: "3", next: "finance_info" }
-          ]
-        },
-        {
-          id: "human_transfer",
-          name: "Transbordo Humano",
-          type: "transfer",
-          content: "Estou transferindo você para um de nossos especialistas. Aguarde um momento.",
-          transfer_to: "human"
-        },
-        {
-          id: "sales_info",
-          name: "Informações de Vendas",
-          type: "message",
-          content: "Nossos planos começam a partir de R$ 99/mês. Gostaria de falar com um consultor?",
-          next: "menu"
-        },
-        {
-          id: "finance_info",
-          name: "Informações Financeiro",
-          type: "message",
-          content: "Para assuntos financeiros, você pode acessar nosso portal ou aguardar um atendente.",
-          next: "human_transfer"
+          content: "Olá! Seja bem-vindo. Como podemos ajudar hoje?",
+          next: null
         }
       ],
       start_block: "start"
@@ -229,8 +217,8 @@ function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () =>
       .from("bot_flows")
       .insert({
         workspace_id: workspace.id,
-        name: "Fluxo Padrão de Boas-vindas",
-        description: "Um fluxo simples com menu de opções e transbordo humano.",
+        name: name.trim(),
+        description: description.trim(),
         definition: defaultDefinition,
         is_active: true
       });
@@ -238,30 +226,65 @@ function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () =>
     if (error) {
       toast.error("Erro ao criar fluxo: " + error.message);
     } else {
-      toast.success("Fluxo padrão criado com sucesso!");
+      toast.success("Fluxo criado com sucesso!");
+      setOpen(false);
       onCreated();
     }
     setLoading(false);
   };
 
   return (
-    <Button 
-      onClick={createDefaultFlow} 
-      disabled={loading} 
-      variant={variant}
-      className="gap-2"
-    >
-      {loading ? (
-        <span className="flex items-center gap-2">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          Criando...
-        </span>
-      ) : (
-        <>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant={variant}
+          className="gap-2"
+        >
           <Plus className="h-4 w-4" />
           {variant === "outline" ? "Novo fluxo" : "Criar fluxo"}
-        </>
-      )}
-    </Button>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Criar Novo Fluxo</DialogTitle>
+          <DialogDescription>
+            Defina um nome e uma descrição para identificar este fluxo de automação.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Nome do Fluxo</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Boas-vindas, Suporte Técnico..."
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Descrição (Opcional)</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Para que serve este fluxo?"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={createFlow} disabled={loading} className="w-full">
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Criando...
+              </span>
+            ) : (
+              "Criar Fluxo"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
