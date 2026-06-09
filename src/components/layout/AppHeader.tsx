@@ -49,14 +49,14 @@ export function AppHeader() {
                 className={cn(
                   "relative inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition sm:px-3",
                   active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    ? "text-white bg-white/10"
+                    : "text-white/70 hover:bg-white/5 hover:text-white",
                 )}
               >
                 <Icon className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{item.label}</span>
                 {active && (
-                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-primary" />
+                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-accent" />
                 )}
               </Link>
             );
