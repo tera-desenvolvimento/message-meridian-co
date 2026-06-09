@@ -20,6 +20,12 @@ export const Route = createFileRoute("/chatbot")({
 });
 
 function ChatbotPage() {
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
+
+  if (editingFlowId) {
+    return <BotEditor flowId={editingFlowId} onClose={() => setEditingFlowId(null)} />;
+  }
+
   return (
     <AuthGuard>
       <div className="flex h-dvh flex-col bg-background text-foreground">
@@ -36,7 +42,7 @@ function ChatbotPage() {
               <CreateFlowButton onCreated={() => window.location.reload()} />
             </header>
 
-            <BotFlowList />
+            <BotFlowList onEdit={(id) => setEditingFlowId(id)} />
           </div>
         </div>
       </div>
