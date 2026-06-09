@@ -126,7 +126,7 @@ function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
               <Bot className="h-5 w-5" />
             </div>
             <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(flow.id)}>
                 <Edit2 className="h-3.5 w-3.5" />
               </Button>
               <Button
