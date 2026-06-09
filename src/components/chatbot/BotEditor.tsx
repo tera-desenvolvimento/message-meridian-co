@@ -12,6 +12,7 @@ import {
   NodeProps,
   Edge,
   Node,
+  OnConnect,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Bot, MessageSquare, ListTree, UserPlus, Save, X, Plus, Trash2 } from 'lucide-react';
@@ -31,7 +32,7 @@ const BaseNode = ({ title, icon: Icon, children, selected, onEdit }: any) => (
         <Icon className="h-3.5 w-3.5" />
       </div>
       <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
-      <button onClick={onEdit} className="ml-auto text-[10px] text-muted-foreground hover:text-primary">Editar</button>
+      {onEdit && <button onClick={onEdit} className="ml-auto text-[10px] text-muted-foreground hover:text-primary">Editar</button>}
     </div>
     <div className="p-3">
       {children}
@@ -92,8 +93,8 @@ interface BotEditorProps {
 }
 
 export function BotEditor({ flowId, onClose }: BotEditorProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -123,7 +124,7 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
         const initialNodes: Node[] = def.blocks.map((b: any, i: number) => ({
           id: b.id,
           type: b.type,
-          position: { x: 250, y: i * 150 },
+          position: { x: 250, y: i * 200 },
           data: { ...b },
         }));
         setNodes(initialNodes);
@@ -133,8 +134,8 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
     loadFlow();
   }, [flowId]);
 
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
+  const onConnect: OnConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
@@ -182,7 +183,7 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
         ...(type === 'choice' ? { options: [{ label: 'Opção 1' }] } : {})
       },
     };
-    setNodes((nds) => nds.concat(newNode));
+    setNodes((nds) => [...nds, newNode]);
   };
 
   const updateNodeData = (id: string, newData: any) => {
