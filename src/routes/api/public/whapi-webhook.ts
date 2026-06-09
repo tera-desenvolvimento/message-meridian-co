@@ -291,22 +291,21 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               console.log("⚠️ Erro ao atualizar conversa:", updateErr);
             }
 
+            // Process Bot Logic
+            try {
+              const { processBotMessage } = await import("@/lib/bot-runner");
+              if (!fromMe) {
+                console.log("🤖 Chamando processBotMessage...");
+                await processBotMessage(conversationId, content);
+              }
+            } catch (botErr) {
+              console.error("❌ Erro no processamento do bot:", botErr);
+            }
+
             processed++;
           } catch (e) {
             console.error("💥 Erro processando mensagem:", e);
             skipped++;
-          }
-        }
-
-        // Process Bot Logic
-        if (processed > 0) {
-          try {
-            // Re-fetch message info to process bot
-            // This is a placeholder for the bot trigger logic
-            // In a real scenario, we'd call an edge function or a internal helper
-            console.log("🤖 Iniciando processamento de bot...");
-          } catch (botErr) {
-            console.error("❌ Erro no processamento do bot:", botErr);
           }
         }
 
