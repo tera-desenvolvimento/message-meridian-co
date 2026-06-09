@@ -30,9 +30,6 @@ export function AuthShell({
             sobre cada interação. Sem ruído, sem complicação.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground">
-          Multi-workspace · Acesso real via Lovable Cloud.
-        </div>
       </div>
 
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
