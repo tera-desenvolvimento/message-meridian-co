@@ -23,7 +23,7 @@ export async function processBotMessage(conversationId: string, messageContent: 
     .maybeSingle();
 
   // 3. Get flow
-  const flowId = state?.flow_id || (await getDefaultFlowId(conv.workspace_id));
+  const flowId: string | null = state?.flow_id || (await getDefaultFlowId(conv.workspace_id));
   if (!flowId) {
     console.log("🤖 Nenhum fluxo configurado para este workspace.");
     return;
@@ -46,8 +46,10 @@ export async function processBotMessage(conversationId: string, messageContent: 
   // Se não tem estado, começa do início
   if (!currentBlockId) {
     currentBlockId = definition.start_block;
-    await upsertBotState(conversationId, flowId, currentBlockId);
-    await executeBlock(conv, definition, currentBlockId);
+    if (currentBlockId) {
+      await upsertBotState(conversationId, flowId, currentBlockId);
+      await executeBlock(conv, definition, currentBlockId);
+    }
     return;
   }
 
@@ -64,7 +66,9 @@ export async function processBotMessage(conversationId: string, messageContent: 
       nextBlockId = option.next;
     } else {
       // Repete a mensagem se a opção for inválida
-      await sendBotResponse(conv.workspace_id, conv.external_id, "Opção inválida. " + currentBlock.content);
+      if (conv.workspace_id && conv.external_id) {
+        await sendBotResponse(conv.workspace_id, conv.external_id, "Opção inválida. " + currentBlock.content);
+      }
       return;
     }
   } else {
@@ -82,7 +86,7 @@ async function executeBlock(conv: any, definition: any, blockId: string) {
   if (!block) return;
 
   // Envia a mensagem do bloco
-  if (block.content) {
+  if (block.content && conv.workspace_id && conv.external_id) {
     await sendBotResponse(conv.workspace_id, conv.external_id, block.content);
   }
 
@@ -145,7 +149,7 @@ async function sendBotResponse(workspaceId: string, externalId: string, content:
   }
 }
 
-async function getDefaultFlowId(workspaceId: string) {
+async function getDefaultFlowId(workspaceId: string): Promise<string | null> {
   const { data } = await supabaseAdmin
     .from("workspaces")
     .select("default_bot_flow_id")
@@ -163,5 +167,5 @@ async function getDefaultFlowId(workspaceId: string) {
     .limit(1)
     .maybeSingle();
     
-  return (firstFlow as any)?.id;
+  return (firstFlow as any)?.id || null;
 }
