@@ -31,11 +31,9 @@ export function AppHeader() {
     <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 sm:px-4">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground text-[11px] font-bold">
-            {workspace?.name?.[0]?.toUpperCase() ?? "C"}
-          </div>
-          <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
-            {workspace?.name ?? "Crmly"}
+          <img src="/logo.svg" alt="Dohkozap" className="h-6 w-6 shrink-0" />
+          <span className="hidden truncate text-sm font-bold tracking-tight sm:inline">
+            Dohkozap
           </span>
         </div>
         <nav className="flex items-center gap-0.5 sm:gap-1">
