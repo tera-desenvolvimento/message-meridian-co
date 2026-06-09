@@ -7,6 +7,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { BotEditor } from "@/components/chatbot/BotEditor";
 
 export const Route = createFileRoute("/chatbot")({
   head: () => ({
