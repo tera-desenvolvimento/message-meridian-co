@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bot, Plus, Play, Pause, Trash2, Edit2 } from "lucide-react";
+import { Bot, Plus, Play, Pause, Trash2, Edit2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/chatbot")({
   head: () => ({
@@ -144,6 +154,20 @@ function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
     }
   }
 
+  async function deleteFlow(id: string) {
+    const { error } = await supabase
+      .from("bot_flows")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Erro ao excluir fluxo. Verifique se ele não está sendo usado.");
+    } else {
+      toast.success("Fluxo excluído com sucesso.");
+      loadFlows();
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed">
@@ -170,57 +194,88 @@ function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {flows.map((flow) => (
-        <div
-          key={flow.id}
-          className="group relative flex flex-col rounded-lg border border-border bg-surface p-5 transition hover:border-primary/50"
-        >
-          <div className="mb-3 flex items-start justify-between">
-            <div className={`rounded-md p-2 ${flow.is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
-              <Bot className="h-5 w-5" />
-            </div>
-            <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(flow.id)}>
-                <Edit2 className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-
-          <h3 className="font-semibold">{flow.name}</h3>
-          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-            {flow.description || "Sem descrição definida."}
-          </p>
-
-          <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${flow.is_active ? 'text-success' : 'text-muted-foreground'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${flow.is_active ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
-              {flow.is_active ? "Ativo" : "Pausado"}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 px-2 text-[11px]"
-              onClick={() => toggleFlow(flow.id, flow.is_active)}
-            >
-              {flow.is_active ? (
-                <>
-                  <Pause className="h-3 w-3" /> Pausar
-                </>
-              ) : (
-                <>
-                  <Play className="h-3 w-3" /> Ativar
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        <BotFlowCard 
+          key={flow.id} 
+          flow={flow} 
+          onEdit={() => onEdit(flow.id)} 
+          onToggle={() => toggleFlow(flow.id, flow.is_active)}
+          onDelete={() => deleteFlow(flow.id)}
+        />
       ))}
+    </div>
+  );
+}
+
+function BotFlowCard({ flow, onEdit, onToggle, onDelete }: { flow: any, onEdit: () => void, onToggle: () => void, onDelete: () => void }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <div
+      className="group relative flex flex-col rounded-lg border border-border bg-surface p-5 transition hover:border-primary/50"
+    >
+      <div className="mb-3 flex items-start justify-between">
+        <div className={`rounded-md p-2 ${flow.is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+          <Bot className="h-5 w-5" />
+        </div>
+        <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setConfirmDelete(true)}
+            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <h3 className="font-semibold">{flow.name}</h3>
+      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+        {flow.description || "Sem descrição definida."}
+      </p>
+
+      <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+        <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${flow.is_active ? 'text-success' : 'text-muted-foreground'}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${flow.is_active ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+          {flow.is_active ? "Ativo" : "Pausado"}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 px-2 text-[11px]"
+          onClick={onToggle}
+        >
+          {flow.is_active ? (
+            <>
+              <Pause className="h-3 w-3" /> Pausar
+            </>
+          ) : (
+            <>
+              <Play className="h-3 w-3" /> Ativar
+            </>
+          )}
+        </Button>
+      </div>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fluxo de chatbot?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o fluxo "{flow.name}" e todas as suas configurações.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar Exclusão
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
