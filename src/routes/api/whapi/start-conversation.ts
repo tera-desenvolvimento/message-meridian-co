@@ -118,6 +118,7 @@ export const Route = createFileRoute("/api/whapi/start-conversation")({
             return jsonResponse({
               ok: true,
               created: false,
+              id: existing.id,
               conversation: { id: existing.id, name: existing.name },
             });
           }
@@ -144,6 +145,7 @@ export const Route = createFileRoute("/api/whapi/start-conversation")({
           return jsonResponse({
             ok: true,
             created: true,
+            id: created.id,
             conversation: { id: created.id, name: created.name },
           });
         } catch (e) {

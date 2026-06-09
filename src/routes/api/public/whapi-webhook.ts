@@ -298,6 +298,18 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
           }
         }
 
+        // Process Bot Logic
+        if (processed > 0) {
+          try {
+            // Re-fetch message info to process bot
+            // This is a placeholder for the bot trigger logic
+            // In a real scenario, we'd call an edge function or a internal helper
+            console.log("🤖 Iniciando processamento de bot...");
+          } catch (botErr) {
+            console.error("❌ Erro no processamento do bot:", botErr);
+          }
+        }
+
         console.log(`\n✅ WEBHOOK PROCESSADO COM SUCESSO — processed=${processed} skipped=${skipped}`);
         return json({ ok: true, processed, skipped });
       },
