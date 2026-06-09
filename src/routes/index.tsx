@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Inbox — Crmly" },
+      { title: "Inbox — Dohkozap" },
       { name: "description", content: "Inbox de atendimento multiempresa." },
     ],
   }),
