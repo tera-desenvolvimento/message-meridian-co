@@ -328,11 +328,6 @@ function SettingsPanel() {
                 Cole esta URL completa no painel do Whapi. O workspace será identificado
                 automaticamente pelo número conectado ou pelo secret configurado acima.
               </p>
-              <div className="mt-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
-                ⚠️ Esta URL funciona <strong className="text-foreground">somente após publicar o projeto</strong>.
-                Clique em <strong className="text-foreground">Publish</strong> no canto superior direito do editor
-                antes de configurá-la no Whapi.
-              </div>
               <div className="mt-3 break-all rounded border border-border bg-surface-2 px-3 py-2 font-mono text-xs">
                 {webhookUrl}
               </div>
