@@ -14,11 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      bot_flows: {
+        Row: {
+          created_at: string
+          definition: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          definition?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          definition?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_flows_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_states: {
+        Row: {
+          conversation_id: string
+          current_block_id: string | null
+          flow_id: string
+          id: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          conversation_id: string
+          current_block_id?: string | null
+          flow_id: string
+          id?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          conversation_id?: string
+          current_block_id?: string | null
+          flow_id?: string
+          id?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_states_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_states_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "bot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           assigned_to: string | null
           avatar_updated_at: string | null
           avatar_url: string | null
+          bot_active: boolean
           created_at: string
           external_id: string | null
           id: string
@@ -34,6 +118,7 @@ export type Database = {
           assigned_to?: string | null
           avatar_updated_at?: string | null
           avatar_url?: string | null
+          bot_active?: boolean
           created_at?: string
           external_id?: string | null
           id?: string
@@ -49,6 +134,7 @@ export type Database = {
           assigned_to?: string | null
           avatar_updated_at?: string | null
           avatar_url?: string | null
+          bot_active?: boolean
           created_at?: string
           external_id?: string | null
           id?: string
@@ -383,6 +469,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          default_bot_flow_id: string | null
           id: string
           name: string
           whatsapp_number: string | null
@@ -390,6 +477,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          default_bot_flow_id?: string | null
           id?: string
           name: string
           whatsapp_number?: string | null
@@ -397,11 +485,20 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          default_bot_flow_id?: string | null
           id?: string
           name?: string
           whatsapp_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_default_bot_flow_id_fkey"
+            columns: ["default_bot_flow_id"]
+            isOneToOne: false
+            referencedRelation: "bot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
