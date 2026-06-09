@@ -7,6 +7,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { BotEditor } from "@/components/chatbot/BotEditor";
 
 export const Route = createFileRoute("/chatbot")({
   head: () => ({
@@ -19,6 +20,12 @@ export const Route = createFileRoute("/chatbot")({
 });
 
 function ChatbotPage() {
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
+
+  if (editingFlowId) {
+    return <BotEditor flowId={editingFlowId} onClose={() => setEditingFlowId(null)} />;
+  }
+
   return (
     <AuthGuard>
       <div className="flex h-dvh flex-col bg-background text-foreground">
@@ -35,7 +42,7 @@ function ChatbotPage() {
               <CreateFlowButton onCreated={() => window.location.reload()} />
             </header>
 
-            <BotFlowList />
+            <BotFlowList onEdit={(id) => setEditingFlowId(id)} />
           </div>
         </div>
       </div>
@@ -43,7 +50,7 @@ function ChatbotPage() {
   );
 }
 
-function BotFlowList() {
+function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
   const { workspace } = useAuth();
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,7 +126,7 @@ function BotFlowList() {
               <Bot className="h-5 w-5" />
             </div>
             <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(flow.id)}>
                 <Edit2 className="h-3.5 w-3.5" />
               </Button>
               <Button
