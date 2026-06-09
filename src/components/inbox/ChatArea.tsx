@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bot, Play, Pause, X } from "lucide-react";
 import {
   ArrowLeft,
   Check,
@@ -169,6 +170,20 @@ export function ChatArea({
     await withBusy(() => api.assignConversation(conversation.id));
   }
 
+  async function handleStopBot() {
+    if (!conversation) return;
+    setBusy(true);
+    try {
+      await api.stopBot(conversation.id);
+      toast.success("Bot interrompido. Você assumiu o atendimento.");
+      onAssigned();
+    } catch (e) {
+      toast.error("Falha ao interromper o bot.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function withBusy(fn: () => Promise<unknown>) {
     if (!conversation) return;
     setBusy(true);
@@ -233,24 +248,43 @@ export function ChatArea({
               </h2>
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span>
-                {conversation.assignedTo ? (
-                  <>
-                    Atribuído a{" "}
-                    <span className="font-medium text-foreground/80">
-                      {conversation.assignedTo.name}
-                    </span>
-                  </>
-                ) : (
-                  <span className="italic">Sem agente</span>
-                )}
-              </span>
+              {conversation.botActive ? (
+                <span className="flex items-center gap-1 font-medium text-primary">
+                  <Bot className="h-3 w-3" />
+                  No Bot
+                </span>
+              ) : (
+                <span>
+                  {conversation.assignedTo ? (
+                    <>
+                      Atribuído a{" "}
+                      <span className="font-medium text-foreground/80">
+                        {conversation.assignedTo.name}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="italic">Sem agente</span>
+                  )}
+                </span>
+              )}
               <span className="text-border-strong">•</span>
               <span>{messages.length} mensagens</span>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
+            {conversation.botActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleStopBot}
+                disabled={busy}
+                className="h-8 gap-1.5 border-primary/30 bg-primary/5 text-[11px] text-primary hover:bg-primary/10"
+              >
+                <X className="h-3 w-3" />
+                Interromper Bot
+              </Button>
+            )}
             {/* Priority */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
