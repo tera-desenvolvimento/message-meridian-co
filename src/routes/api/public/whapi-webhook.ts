@@ -291,23 +291,21 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
               console.log("⚠️ Erro ao atualizar conversa:", updateErr);
             }
 
+            // Process Bot Logic
+            try {
+              const { processBotMessage } = await import("@/lib/bot-runner");
+              if (!fromMe) {
+                console.log("🤖 Chamando processBotMessage...");
+                await processBotMessage(conversationId, content);
+              }
+            } catch (botErr) {
+              console.error("❌ Erro no processamento do bot:", botErr);
+            }
+
             processed++;
           } catch (e) {
             console.error("💥 Erro processando mensagem:", e);
             skipped++;
-          }
-        }
-
-        // Process Bot Logic
-        if (processed > 0) {
-          try {
-            const { processBotMessage } = await import("@/lib/bot-runner");
-            console.log("🤖 Iniciando processamento de bot...");
-            if (!fromMe) {
-              await processBotMessage(conversationId, content);
-            }
-          } catch (botErr) {
-            console.error("❌ Erro no processamento do bot:", botErr);
           }
         }
 

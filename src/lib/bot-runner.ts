@@ -6,7 +6,7 @@ export async function processBotMessage(conversationId: string, messageContent: 
   // 1. Check if conversation is bot-active
   const { data: conv } = await supabaseAdmin
     .from("conversations")
-    .select("bot_active, workspace_id, external_id")
+    .select("id, bot_active, workspace_id, external_id")
     .eq("id", conversationId)
     .single();
 
@@ -59,7 +59,7 @@ export async function processBotMessage(conversationId: string, messageContent: 
 
   if (currentBlock.type === "choice") {
     const input = messageContent.trim();
-    const option = currentBlock.options.find((o: any) => o.label === input);
+    const option = currentBlock.options?.find((o: any) => o.label === input);
     if (option) {
       nextBlockId = option.next;
     } else {
@@ -97,7 +97,7 @@ async function executeBlock(conv: any, definition: any, blockId: string) {
     }
   } else if (block.type === "message" && block.next) {
     // Se for apenas mensagem, avança automaticamente se houver um próximo
-    await upsertBotState(conv.id, null, block.next); // flowId opcional se já existe
+    await upsertBotState(conv.id, null, block.next);
     await executeBlock(conv, definition, block.next);
   }
 }
@@ -127,7 +127,7 @@ async function sendBotResponse(workspaceId: string, externalId: string, content:
 
   if (!integration?.token) return;
 
-  const apiUrl = integration.api_url.replace(/\/$/, "");
+  const apiUrl = (integration.api_url as string).replace(/\/$/, "");
   const whapiUrl = `${apiUrl}/messages/text`;
 
   try {
@@ -163,5 +163,5 @@ async function getDefaultFlowId(workspaceId: string) {
     .limit(1)
     .maybeSingle();
     
-  return firstFlow?.id;
+  return (firstFlow as any)?.id;
 }
