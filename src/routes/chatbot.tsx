@@ -32,10 +32,7 @@ function ChatbotPage() {
                   Crie e gerencie fluxos de atendimento automatizado estilo Blip.
                 </p>
               </div>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Criar fluxo
-              </Button>
+              <CreateFlowButton onCreated={() => window.location.reload()} />
             </header>
 
             <BotFlowList />
@@ -105,10 +102,7 @@ function BotFlowList() {
         <p className="mb-6 text-sm text-muted-foreground">
           Comece criando um fluxo de boas-vindas ou menu inicial para seus clientes.
         </p>
-        <Button variant="outline" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo fluxo
-        </Button>
+        <CreateFlowButton onCreated={() => window.location.reload()} variant="outline" />
       </div>
     );
   }
@@ -168,5 +162,94 @@ function BotFlowList() {
         </div>
       ))}
     </div>
+  );
+}
+
+function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () => void, variant?: "default" | "outline" }) {
+  const { workspace } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const createDefaultFlow = async () => {
+    if (!workspace?.id) return;
+    setLoading(true);
+
+    const defaultDefinition = {
+      blocks: [
+        {
+          id: "start",
+          type: "message",
+          content: "Olá! Seja bem-vindo ao atendimento da Dohkozap. Como podemos ajudar hoje?",
+          next: "menu"
+        },
+        {
+          id: "menu",
+          type: "choice",
+          content: "Escolha uma opção:",
+          options: [
+            { label: "Suporte Técnico", next: "human_transfer" },
+            { label: "Vendas", next: "sales_info" },
+            { label: "Financeiro", next: "finance_info" }
+          ]
+        },
+        {
+          id: "human_transfer",
+          type: "transfer",
+          content: "Estou transferindo você para um de nossos especialistas. Aguarde um momento.",
+          transfer_to: "human"
+        },
+        {
+          id: "sales_info",
+          type: "message",
+          content: "Nossos planos começam a partir de R$ 99/mês. Gostaria de falar com um consultor?",
+          next: "menu"
+        },
+        {
+          id: "finance_info",
+          type: "message",
+          content: "Para assuntos financeiros, você pode acessar nosso portal ou aguardar um atendente.",
+          next: "human_transfer"
+        }
+      ],
+      start_block: "start"
+    };
+
+    const { error } = await supabase
+      .from("bot_flows")
+      .insert({
+        workspace_id: workspace.id,
+        name: "Fluxo Padrão de Boas-vindas",
+        description: "Um fluxo simples com menu de opções e transbordo humano.",
+        definition: defaultDefinition,
+        is_active: true
+      });
+
+    if (error) {
+      toast.error("Erro ao criar fluxo: " + error.message);
+    } else {
+      toast.success("Fluxo padrão criado com sucesso!");
+      onCreated();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Button 
+      onClick={createDefaultFlow} 
+      disabled={loading} 
+      variant={variant}
+      className="gap-2"
+    >
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Criando...
+        </span>
+      ) : (
+        <>
+          <Plus className="h-4 w-4" />
+          {variant === "outline" ? "Novo fluxo" : "Criar fluxo"}
+        </>
+      )}
+    </Button>
   );
 }
