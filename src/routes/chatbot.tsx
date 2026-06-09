@@ -50,7 +50,7 @@ function ChatbotPage() {
   );
 }
 
-function BotFlowList() {
+function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
   const { workspace } = useAuth();
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
