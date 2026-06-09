@@ -57,11 +57,12 @@ function BotFlowList() {
   }, [workspace?.id]);
 
   async function loadFlows() {
+    if (!workspace?.id) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("bot_flows")
       .select("*")
-      .eq("workspace_id", workspace?.id)
+      .eq("workspace_id", workspace.id)
       .order("created_at", { ascending: false });
 
     if (error) {
