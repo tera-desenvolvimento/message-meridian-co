@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check, Users, UserRound, MessageSquare } from "lucide-react";
+import { Search, Inbox, Filter, Plus, Loader2, Flag, User, Check, Users, UserRound, MessageSquare, Bot } from "lucide-react";
 import type { Conversation, ConversationStatus, ConversationType, TeamMember } from "@/lib/types";
 import { formatRelative, formatWhatsappId } from "@/lib/format";
 import { StatusBadge, TypeTag } from "./StatusBadge";
@@ -37,10 +37,11 @@ interface Props {
   onConversationCreated?: (id: string) => void;
 }
 
-const FILTERS: { id: "ALL" | ConversationStatus; label: string }[] = [
+const FILTERS: { id: "ALL" | ConversationStatus | "BOT"; label: string }[] = [
   { id: "ALL", label: "Todas" },
   { id: "OPEN", label: "Abertas" },
-  { id: "PENDING", label: "Aguardando atendimento" },
+  { id: "PENDING", label: "Aguardando" },
+  { id: "BOT", label: "No Bot" },
   { id: "CLOSED", label: "Fechadas" },
 ];
 
@@ -76,7 +77,7 @@ export function ConversationList({
 }: Props) {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"ALL" | ConversationStatus>("ALL");
+  const [filter, setFilter] = useState<"ALL" | ConversationStatus | "BOT">("ALL");
   const [tab, setTab] = useState<"ALL" | ConversationType>("ALL");
   // "ALL" = todos, "ME" = atribuídas a mim, "UNASSIGNED" = sem agente,
   // ou um userId específico de outro agente.
@@ -108,7 +109,11 @@ export function ConversationList({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tabScoped.filter((c) => {
-      if (filter !== "ALL" && c.status !== filter) return false;
+      if (filter === "BOT") {
+        if (!c.botActive) return false;
+      } else if (filter !== "ALL" && c.status !== filter) {
+        return false;
+      }
       if (agentFilter === "ME") {
         if (c.assignedTo?.id !== user?.id) return false;
       } else if (agentFilter === "UNASSIGNED") {
@@ -134,6 +139,7 @@ export function ConversationList({
       ALL: tabScoped.length,
       OPEN: tabScoped.filter((c) => c.status === "OPEN").length,
       PENDING: tabScoped.filter((c) => c.status === "PENDING").length,
+      BOT: tabScoped.filter((c) => c.botActive).length,
       CLOSED: tabScoped.filter((c) => c.status === "CLOSED").length,
     };
   }, [tabScoped]);
@@ -229,8 +235,7 @@ export function ConversationList({
         <div className="mt-3 flex flex-wrap items-center gap-1">
           <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           {FILTERS.map((f) => {
-            const shortLabel =
-              f.id === "PENDING" ? "Aguardando" : f.label;
+            const shortLabel = f.label;
             return (
               <button
                 key={f.id}

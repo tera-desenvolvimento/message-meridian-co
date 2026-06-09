@@ -63,6 +63,7 @@ function mapConversation(row: {
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   assigned_to: string | null;
   avatar_url?: string | null;
+  bot_active?: boolean;
   assignee?: { id: string; name: string } | null;
   awaiting_reply_since?: string | null;
 }): Conversation {
@@ -77,6 +78,7 @@ function mapConversation(row: {
     priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
     avatarUrl: row.avatar_url ?? null,
+    botActive: !!row.bot_active,
     awaitingReplySince: row.awaiting_reply_since ?? null,
   };
 }

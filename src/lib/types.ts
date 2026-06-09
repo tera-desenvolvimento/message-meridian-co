@@ -18,6 +18,7 @@ export interface Conversation {
   priority: ConversationPriority;
   assignedTo: Assignee | null;
   avatarUrl: string | null;
+  botActive: boolean;
   /**
    * Timestamp da última mensagem recebida do cliente que ainda não foi
    * respondida pela equipe. `null` quando a última mensagem foi enviada
