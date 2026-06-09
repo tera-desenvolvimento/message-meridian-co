@@ -90,16 +90,57 @@ function BotFlowList({ onEdit }: { onEdit: (id: string) => void }) {
   }
 
   async function toggleFlow(id: string, currentStatus: boolean) {
-    const { error } = await supabase
-      .from("bot_flows")
-      .update({ is_active: !currentStatus })
-      .eq("id", id);
+    if (currentStatus) {
+      // Pausing an active flow is simple
+      const { error } = await supabase
+        .from("bot_flows")
+        .update({ is_active: false })
+        .eq("id", id);
+      
+      if (error) {
+        toast.error("Erro ao pausar fluxo.");
+      } else {
+        toast.success("Fluxo pausado");
+        loadFlows();
+      }
+      return;
+    }
 
-    if (error) {
-      toast.error("Erro ao atualizar status.");
-    } else {
-      toast.success(currentStatus ? "Fluxo pausado" : "Fluxo ativado");
+    // Activating a flow:
+    // 1. Pause all other flows
+    // 2. Set this one as active
+    // 3. Clear bot state for all active conversations (overflow to human)
+    setLoading(true);
+    try {
+      // Step 1 & 2: Update database statuses in parallel
+      const updateAllPromise = supabase
+        .from("bot_flows")
+        .update({ is_active: false })
+        .eq("workspace_id", workspace!.id);
+      
+      const updateSelfPromise = supabase
+        .from("bot_flows")
+        .update({ is_active: true })
+        .eq("id", id);
+
+      await Promise.all([updateAllPromise, updateSelfPromise]);
+
+      // Step 3: Handle Overflow (Interromper fluxos ativos)
+      // Definimos bot_active: false e status: PENDING para todos que estavam no bot
+      const { error: overflowError } = await supabase
+        .from("conversations")
+        .update({ bot_active: false, status: "PENDING", assigned_to: null })
+        .eq("workspace_id", workspace!.id)
+        .eq("bot_active", true);
+
+      if (overflowError) console.error("Erro ao transbordar usuários:", overflowError);
+      
+      toast.success("Novo fluxo ativado e usuários transbordados para atendimento humano.");
       loadFlows();
+    } catch (err) {
+      toast.error("Erro ao trocar fluxo ativo.");
+    } finally {
+      setLoading(false);
     }
   }
 
