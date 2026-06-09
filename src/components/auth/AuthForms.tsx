@@ -17,7 +17,7 @@ export function AuthShell({
     <div className="flex min-h-dvh w-full bg-background text-foreground">
       <div className="hidden w-1/2 flex-col justify-between border-r border-border bg-surface p-10 lg:flex">
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Dohkozap" className="h-8 w-8 shrink-0" />
+          <img src="/logo.svg" alt="Dohkozap" className="h-8 w-auto shrink-0" />
           <span className="text-sm font-bold tracking-tight">Dohkozap</span>
         </div>
         <div className="space-y-3">
