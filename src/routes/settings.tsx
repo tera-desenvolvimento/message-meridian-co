@@ -37,7 +37,6 @@ function SettingsPage() {
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-8 px-6 py-8">
             <AccountSection />
-            <BotFlowSection />
             <IntegrationSection />
           </div>
         </div>
@@ -168,62 +167,6 @@ function AccountSection() {
           </div>
         </form>
       )}
-    </section>
-  );
-}
-
-function BotFlowSection() {
-  const { workspace } = useAuth();
-  const [flows, setFlows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!workspace?.id) return;
-    (async () => {
-      const { data } = await supabase
-        .from("bot_flows")
-        .select("*")
-        .eq("workspace_id", workspace.id);
-      setFlows(data ?? []);
-      setLoading(false);
-    })();
-  }, [workspace?.id]);
-
-  return (
-    <section>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Automação (Chatbot)</h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Gerencie os fluxos de atendimento automático estilo Blip.
-        </p>
-      </div>
-      <div className="rounded-md border border-border bg-surface p-5">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Carregando fluxos...</p>
-        ) : flows.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-muted-foreground mb-4">Nenhum fluxo criado.</p>
-            <button className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover">
-              Criar primeiro fluxo
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {flows.map(f => (
-              <div key={f.id} className="flex items-center justify-between p-3 rounded border border-border bg-surface-2">
-                <div>
-                  <h3 className="text-sm font-medium">{f.name}</h3>
-                  <p className="text-xs text-muted-foreground">{f.description || "Sem descrição"}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="text-xs font-medium text-primary">Editar</button>
-                  <button className="text-xs font-medium text-destructive">Excluir</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </section>
   );
 }
