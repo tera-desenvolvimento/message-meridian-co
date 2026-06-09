@@ -160,7 +160,7 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
 
     const { error } = await supabase
       .from('bot_flows')
-      .update({ definition })
+      .update({ definition: definition as any })
       .eq('id', flowId);
 
     if (error) {
