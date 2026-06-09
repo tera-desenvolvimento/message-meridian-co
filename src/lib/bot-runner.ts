@@ -95,7 +95,7 @@ async function executeBlock(conv: any, definition: any, blockId: string) {
     if (block.transfer_to === "human") {
       await supabaseAdmin
         .from("conversations")
-        .update({ bot_active: false, status: "PENDING" })
+        .update({ bot_active: false, status: "PENDING", assigned_to: null })
         .eq("id", conv.id);
       console.log("🤖 Transbordo humano realizado.");
     }

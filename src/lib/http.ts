@@ -63,6 +63,7 @@ function mapConversation(row: {
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   assigned_to: string | null;
   avatar_url?: string | null;
+  bot_active?: boolean;
   assignee?: { id: string; name: string } | null;
   awaiting_reply_since?: string | null;
 }): Conversation {
@@ -77,6 +78,7 @@ function mapConversation(row: {
     priority: (row.priority ?? "NORMAL") as Conversation["priority"],
     assignedTo: row.assignee ? { id: row.assignee.id, name: row.assignee.name } : null,
     avatarUrl: row.avatar_url ?? null,
+    botActive: !!row.bot_active,
     awaitingReplySince: row.awaiting_reply_since ?? null,
   };
 }
@@ -677,6 +679,14 @@ export const api = {
     }
     return json;
   },
+
+  async stopBot(conversationId: string): Promise<void> {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ bot_active: false })
+      .eq("id", conversationId);
+    if (error) throw error;
+  },
 };
 
 // ---- fallbacks when PostgREST relationship hints fail ----
@@ -684,7 +694,7 @@ export const api = {
 async function manualListConversations(wsId: string): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url")
+    .select("id, type, name, external_id, last_message, last_message_at, status, priority, assigned_to, avatar_url, bot_active")
     .eq("workspace_id", wsId)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
