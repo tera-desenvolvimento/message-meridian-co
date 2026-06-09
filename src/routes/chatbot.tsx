@@ -177,34 +177,39 @@ function CreateFlowButton({ onCreated, variant = "default" }: { onCreated: () =>
       blocks: [
         {
           id: "start",
+          name: "Início",
           type: "message",
           content: "Olá! Seja bem-vindo ao atendimento da Dohkozap. Como podemos ajudar hoje?",
           next: "menu"
         },
         {
           id: "menu",
+          name: "Menu Principal",
           type: "choice",
-          content: "Escolha uma opção:",
+          content: "Escolha uma opção digitando o número correspondente:\n\n1. Suporte Técnico\n2. Vendas\n3. Financeiro",
           options: [
-            { label: "Suporte Técnico", next: "human_transfer" },
-            { label: "Vendas", next: "sales_info" },
-            { label: "Financeiro", next: "finance_info" }
+            { label: "1", next: "human_transfer" },
+            { label: "2", next: "sales_info" },
+            { label: "3", next: "finance_info" }
           ]
         },
         {
           id: "human_transfer",
+          name: "Transbordo Humano",
           type: "transfer",
           content: "Estou transferindo você para um de nossos especialistas. Aguarde um momento.",
           transfer_to: "human"
         },
         {
           id: "sales_info",
+          name: "Informações de Vendas",
           type: "message",
           content: "Nossos planos começam a partir de R$ 99/mês. Gostaria de falar com um consultor?",
           next: "menu"
         },
         {
           id: "finance_info",
+          name: "Informações Financeiro",
           type: "message",
           content: "Para assuntos financeiros, você pode acessar nosso portal ou aguardar um atendente.",
           next: "human_transfer"

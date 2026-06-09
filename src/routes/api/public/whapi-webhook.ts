@@ -301,10 +301,10 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
         // Process Bot Logic
         if (processed > 0) {
           try {
-            // Re-fetch message info to process bot
-            // This is a placeholder for the bot trigger logic
-            // In a real scenario, we'd call an edge function or a internal helper
+            const { processBotMessage } = await import("@/lib/bot-runner");
+            // Usamos a última conversa processada
             console.log("🤖 Iniciando processamento de bot...");
+            // await processBotMessage(conversationId, content);
           } catch (botErr) {
             console.error("❌ Erro no processamento do bot:", botErr);
           }
