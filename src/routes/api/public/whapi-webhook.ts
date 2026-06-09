@@ -302,9 +302,10 @@ export const Route = createFileRoute("/api/public/whapi-webhook")({
         if (processed > 0) {
           try {
             const { processBotMessage } = await import("@/lib/bot-runner");
-            // Usamos a última conversa processada
             console.log("🤖 Iniciando processamento de bot...");
-            // await processBotMessage(conversationId, content);
+            if (!fromMe) {
+              await processBotMessage(conversationId, content);
+            }
           } catch (botErr) {
             console.error("❌ Erro no processamento do bot:", botErr);
           }
