@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Play, Pause, X } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   Check,
