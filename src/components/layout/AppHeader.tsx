@@ -66,8 +66,8 @@ export function AppHeader() {
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <div className="hidden text-right md:block">
-          <div className="text-xs font-medium leading-tight text-foreground">{user?.name}</div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs font-medium leading-tight text-white">{user?.name}</div>
+          <div className="text-[10px] uppercase tracking-wider text-white/60">
             {user?.role === "ADMIN" ? "Admin" : "Agente"}
           </div>
         </div>
@@ -75,7 +75,7 @@ export function AppHeader() {
           onClick={toggle}
           aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
           title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground transition hover:border-border-strong hover:text-foreground"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/20 bg-white/10 text-white transition hover:border-white/40 hover:text-white"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
@@ -83,7 +83,7 @@ export function AppHeader() {
           onClick={logout}
           title="Sair"
           aria-label="Sair"
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 text-xs font-medium text-muted-foreground transition hover:border-border-strong hover:text-foreground sm:px-3"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-2 text-xs font-medium text-white transition hover:border-white/40 hover:text-white sm:px-3"
         >
           <LogOut className="h-3.5 w-3.5 sm:hidden" />
           <span className="hidden sm:inline">Sair</span>

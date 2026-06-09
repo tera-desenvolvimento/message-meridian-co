@@ -45,7 +45,7 @@
   /* Dohkozap colors */
   --background: oklch(0.99 0.003 260);
   --foreground: oklch(0.20 0.010 260);
-  --surface: #002347;
+  --surface: oklch(0.975 0.004 260);
   --surface-2: oklch(0.955 0.005 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.20 0.010 260);
