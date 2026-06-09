@@ -28,7 +28,7 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 sm:px-4">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-primary px-3 sm:px-4 text-white">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <img src="/logo.svg" alt="Dohkozap" className="h-6 w-auto shrink-0" />
