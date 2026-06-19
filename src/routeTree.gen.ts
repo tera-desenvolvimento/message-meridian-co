@@ -18,6 +18,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ChatbotRouteImport } from './routes/chatbot'
+import { Route as AdminExportRouteImport } from './routes/admin-export'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -29,6 +30,7 @@ import { Route as ApiTeamJoinByCodeRouteImport } from './routes/api/team/join-by
 import { Route as ApiTeamAddMemberRouteImport } from './routes/api/team/add-member'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
 import { Route as ApiPublicAcceptInviteRouteImport } from './routes/api/public/accept-invite'
+import { Route as ApiAdminExportRouteImport } from './routes/api/admin/export'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -76,6 +78,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const ChatbotRoute = ChatbotRouteImport.update({
   id: '/chatbot',
   path: '/chatbot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminExportRoute = AdminExportRouteImport.update({
+  id: '/admin-export',
+  path: '/admin-export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
@@ -134,6 +141,11 @@ const ApiPublicAcceptInviteRoute = ApiPublicAcceptInviteRouteImport.update({
   path: '/api/public/accept-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminExportRoute = ApiAdminExportRouteImport.update({
+  id: '/api/admin/export',
+  path: '/api/admin/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -156,6 +168,7 @@ const LovableEmailQueueProcessRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/admin-export': typeof AdminExportRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -166,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -181,6 +195,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/admin-export': typeof AdminExportRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -191,6 +206,7 @@ export interface FileRoutesByTo {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -207,6 +223,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/admin-export': typeof AdminExportRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -217,6 +234,7 @@ export interface FileRoutesById {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -234,6 +252,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accept-invite'
+    | '/admin-export'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -244,6 +263,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -259,6 +279,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accept-invite'
+    | '/admin-export'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -269,6 +290,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -284,6 +306,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accept-invite'
+    | '/admin-export'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -294,6 +317,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -310,6 +334,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
+  AdminExportRoute: typeof AdminExportRoute
   ChatbotRoute: typeof ChatbotRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -320,6 +345,7 @@ export interface RootRouteChildren {
   TeamRoute: typeof TeamRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiAdminExportRoute: typeof ApiAdminExportRoute
   ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
   ApiTeamAddMemberRoute: typeof ApiTeamAddMemberRoute
@@ -396,6 +422,13 @@ declare module '@tanstack/react-router' {
       path: '/chatbot'
       fullPath: '/chatbot'
       preLoaderRoute: typeof ChatbotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-export': {
+      id: '/admin-export'
+      path: '/admin-export'
+      fullPath: '/admin-export'
+      preLoaderRoute: typeof AdminExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accept-invite': {
@@ -475,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAcceptInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/export': {
+      id: '/api/admin/export'
+      path: '/api/admin/export'
+      fullPath: '/api/admin/export'
+      preLoaderRoute: typeof ApiAdminExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -502,6 +542,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcceptInviteRoute: AcceptInviteRoute,
+  AdminExportRoute: AdminExportRoute,
   ChatbotRoute: ChatbotRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
@@ -512,6 +553,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamRoute: TeamRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiAdminExportRoute: ApiAdminExportRoute,
   ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
   ApiTeamAddMemberRoute: ApiTeamAddMemberRoute,
@@ -527,12 +569,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
