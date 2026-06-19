@@ -29,6 +29,7 @@ import { Route as ApiTeamJoinByCodeRouteImport } from './routes/api/team/join-by
 import { Route as ApiTeamAddMemberRouteImport } from './routes/api/team/add-member'
 import { Route as ApiPublicWhapiWebhookRouteImport } from './routes/api/public/whapi-webhook'
 import { Route as ApiPublicAcceptInviteRouteImport } from './routes/api/public/accept-invite'
+import { Route as ApiAdminExportRouteImport } from './routes/api/admin/export'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -134,6 +135,11 @@ const ApiPublicAcceptInviteRoute = ApiPublicAcceptInviteRouteImport.update({
   path: '/api/public/accept-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminExportRoute = ApiAdminExportRouteImport.update({
+  id: '/api/admin/export',
+  path: '/api/admin/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
   '/api/team/add-member': typeof ApiTeamAddMemberRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/unsubscribe'
     | '/email/unsubscribe'
+    | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
     | '/api/team/add-member'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   TeamRoute: typeof TeamRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiAdminExportRoute: typeof ApiAdminExportRoute
   ApiPublicAcceptInviteRoute: typeof ApiPublicAcceptInviteRoute
   ApiPublicWhapiWebhookRoute: typeof ApiPublicWhapiWebhookRoute
   ApiTeamAddMemberRoute: typeof ApiTeamAddMemberRoute
@@ -475,6 +488,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAcceptInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/export': {
+      id: '/api/admin/export'
+      path: '/api/admin/export'
+      fullPath: '/api/admin/export'
+      preLoaderRoute: typeof ApiAdminExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamRoute: TeamRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiAdminExportRoute: ApiAdminExportRoute,
   ApiPublicAcceptInviteRoute: ApiPublicAcceptInviteRoute,
   ApiPublicWhapiWebhookRoute: ApiPublicWhapiWebhookRoute,
   ApiTeamAddMemberRoute: ApiTeamAddMemberRoute,

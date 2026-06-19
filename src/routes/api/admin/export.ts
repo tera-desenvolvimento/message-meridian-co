@@ -100,7 +100,7 @@ async function fetchStorageInventory(admin: ReturnType<typeof createClient>) {
         .from(b.name)
         .list(undefined, { limit: PAGE_SIZE, offset, sortBy: { column: "name", order: "asc" } });
       if (listErr) throw new Error(`[storage.${b.name}] ${listErr.message}`);
-      const batch = data ?? [];
+      const batch = (data ?? []) as unknown as Array<Record<string, unknown>>;
       objects.push(...batch);
       if (batch.length < PAGE_SIZE) break;
       offset += PAGE_SIZE;
