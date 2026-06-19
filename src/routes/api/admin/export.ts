@@ -184,10 +184,10 @@ export const Route = createFileRoute("/api/admin/export")({
 
         zip.file("manifest.json", JSON.stringify(manifest, null, 2));
 
-        const blob = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+        const bytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
         const filename = `lovable-export-${generatedAt.replace(/[:.]/g, "-")}.zip`;
 
-        return new Response(blob, {
+        return new Response(bytes as unknown as BodyInit, {
           status: 200,
           headers: {
             "content-type": "application/zip",
