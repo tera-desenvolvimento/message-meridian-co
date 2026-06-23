@@ -19,11 +19,12 @@ export function AppHeader() {
   const path = location.pathname;
 
   const items: {
-    to: "/" | "/team" | "/chatbot" | "/ai" | "/settings";
+    to: "/" | "/dashboard" | "/team" | "/chatbot" | "/ai" | "/settings";
     label: string;
     icon: typeof Inbox;
   }[] = [
     { to: "/", label: "Caixa de entrada", icon: Inbox },
+    { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
     { to: "/team", label: "Equipe", icon: Users },
     { to: "/chatbot", label: "Chatbot", icon: Bot },
     { to: "/ai", label: "IA", icon: Sparkles },
