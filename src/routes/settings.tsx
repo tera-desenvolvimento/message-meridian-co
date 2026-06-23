@@ -213,12 +213,7 @@ function ChannelPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    void fetchStatus();
-  }, [isAdmin, fetchStatus]);
-
-  // Poll while waiting for QR scan
+  // Poll while waiting for QR scan (only after user initiated connection)
   useEffect(() => {
     if (!state || !isAdmin) return;
     const isConnected = ["AUTH", "ACTIVE", "CONNECTED"].includes(state.status.toUpperCase());
@@ -226,6 +221,7 @@ function ChannelPanel() {
     const id = setInterval(fetchStatus, 5000);
     return () => clearInterval(id);
   }, [state, isAdmin, fetchStatus]);
+
 
 
 
