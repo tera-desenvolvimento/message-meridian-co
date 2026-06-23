@@ -42,5 +42,14 @@ export function AuthGuard({
   if (!isAuthenticated) return null;
   if (requireWorkspace && user && !user.workspaceId) return null;
 
-  return <>{children}</>;
+  if (!requireWorkspace) return <>{children}</>;
+
+  return (
+    <TrialGate>
+      <div className="flex h-dvh flex-col">
+        <TrialBanner />
+        <div className="flex min-h-0 flex-1">{children}</div>
+      </div>
+    </TrialGate>
+  );
 }
