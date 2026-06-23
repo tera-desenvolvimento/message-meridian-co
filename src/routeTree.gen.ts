@@ -44,6 +44,7 @@ import { Route as ApiPublicDohkoTenantsRouteImport } from './routes/api/public/d
 import { Route as ApiPublicDohkoMeRouteImport } from './routes/api/public/dohko/me'
 import { Route as ApiPublicDohkoLogoutRouteImport } from './routes/api/public/dohko/logout'
 import { Route as ApiPublicDohkoLoginRouteImport } from './routes/api/public/dohko/login'
+import { Route as ApiPublicDohkoIntegrationRouteImport } from './routes/api/public/dohko/integration'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -224,6 +225,12 @@ const ApiPublicDohkoLoginRoute = ApiPublicDohkoLoginRouteImport.update({
   path: '/api/public/dohko/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDohkoIntegrationRoute =
+  ApiPublicDohkoIntegrationRouteImport.update({
+    id: '/api/public/dohko/integration',
+    path: '/api/public/dohko/integration',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
   '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
@@ -290,6 +298,7 @@ export interface FileRoutesByTo {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
   '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
   '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
     | '/api/public/dohko/me'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
     | '/api/public/dohko/me'
@@ -440,6 +452,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
     | '/api/public/dohko/me'
@@ -476,6 +489,7 @@ export interface RootRouteChildren {
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicDohkoIntegrationRoute: typeof ApiPublicDohkoIntegrationRoute
   ApiPublicDohkoLoginRoute: typeof ApiPublicDohkoLoginRoute
   ApiPublicDohkoLogoutRoute: typeof ApiPublicDohkoLogoutRoute
   ApiPublicDohkoMeRoute: typeof ApiPublicDohkoMeRoute
@@ -732,6 +746,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDohkoLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dohko/integration': {
+      id: '/api/public/dohko/integration'
+      path: '/api/public/dohko/integration'
+      fullPath: '/api/public/dohko/integration'
+      preLoaderRoute: typeof ApiPublicDohkoIntegrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -774,6 +795,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicDohkoIntegrationRoute: ApiPublicDohkoIntegrationRoute,
   ApiPublicDohkoLoginRoute: ApiPublicDohkoLoginRoute,
   ApiPublicDohkoLogoutRoute: ApiPublicDohkoLogoutRoute,
   ApiPublicDohkoMeRoute: ApiPublicDohkoMeRoute,

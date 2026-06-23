@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Lock, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Unlock } from "lucide-react";
+import { Lock, LogOut, Plus, RefreshCw, Settings2, ShieldCheck, Trash2, Unlock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dohko/tenants")({
@@ -34,6 +34,7 @@ interface TenantTableProps {
   onToggleTenant: (tenant: Tenant) => void;
   onToggleUser: (user: TenantUser) => void;
   onRemove: (tenant: Tenant) => void;
+  onEditIntegration: (tenant: Tenant) => void;
 }
 
 function StatusBadge({ active }: { active: boolean }) {
@@ -89,7 +90,7 @@ function TenantUsers({ users, onToggleUser }: { users: TenantUser[]; onToggleUse
   );
 }
 
-function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove }: TenantTableProps) {
+function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove, onEditIntegration }: TenantTableProps) {
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
       <table className="w-full text-sm">
@@ -124,6 +125,7 @@ function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove
                 onToggleTenant={onToggleTenant}
                 onToggleUser={onToggleUser}
                 onRemove={onRemove}
+                onEditIntegration={onEditIntegration}
               />
             ))
           )}
@@ -139,12 +141,14 @@ function TenantRow({
   onToggleTenant,
   onToggleUser,
   onRemove,
+  onEditIntegration,
 }: {
   tenant: Tenant;
   onRename: (tenant: Tenant) => void;
   onToggleTenant: (tenant: Tenant) => void;
   onToggleUser: (user: TenantUser) => void;
   onRemove: (tenant: Tenant) => void;
+  onEditIntegration: (tenant: Tenant) => void;
 }) {
   return (
     <tr className="border-t border-border align-top">
@@ -162,9 +166,17 @@ function TenantRow({
         <TenantUsers users={tenant.users} onToggleUser={onToggleUser} />
       </td>
       <td className="px-4 py-3 text-muted-foreground">
-        {tenant.integration
-          ? `${tenant.integration.provider}${tenant.integration.phone_number ? " · " + tenant.integration.phone_number : ""}`
-          : "—"}
+        <div className="text-xs">
+          {tenant.integration
+            ? `${tenant.integration.provider}${tenant.integration.phone_number ? " · " + tenant.integration.phone_number : ""}`
+            : <span className="text-destructive">Não configurada</span>}
+        </div>
+        <button
+          onClick={() => onEditIntegration(tenant)}
+          className="mt-2 inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-accent"
+        >
+          <Settings2 className="h-3 w-3" /> Configurar API
+        </button>
       </td>
       <td className="px-4 py-3 text-[11px] text-muted-foreground">
         {new Date(tenant.createdAt).toLocaleString()}
@@ -189,12 +201,207 @@ function TenantRow({
   );
 }
 
+interface IntegrationForm {
+  api_url: string;
+  token: string;
+  webhook_secret: string;
+  phone_number: string;
+  enabled: boolean;
+}
+
+function IntegrationModal({
+  tenant,
+  onClose,
+  onSaved,
+}: {
+  tenant: Tenant;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<IntegrationForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await fetch(
+        `/api/public/dohko/integration?workspaceId=${encodeURIComponent(tenant.id)}`,
+        { credentials: "include" },
+      );
+      const json = (await res.json().catch(() => ({}))) as {
+        integration?: IntegrationForm;
+        error?: string;
+      };
+      if (!alive) return;
+      if (!res.ok) {
+        setErr(json.error ?? "Falha ao carregar");
+        return;
+      }
+      setForm({
+        api_url: json.integration?.api_url ?? "https://gate.whapi.cloud",
+        token: json.integration?.token ?? "",
+        webhook_secret: json.integration?.webhook_secret ?? "",
+        phone_number: json.integration?.phone_number ?? "",
+        enabled: json.integration?.enabled ?? false,
+      });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [tenant.id]);
+
+  async function save() {
+    if (!form) return;
+    setSaving(true);
+    setErr(null);
+    const res = await fetch("/api/public/dohko/integration", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ workspaceId: tenant.id, ...form }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    setSaving(false);
+    if (!res.ok) {
+      setErr(json.error ?? "Falha ao salvar");
+      return;
+    }
+    onSaved();
+    onClose();
+  }
+
+  const PROJECT_ID = "8d07022c-e934-4b33-8808-5da870e1f74b";
+  const webhookBase = `https://project--${PROJECT_ID}.lovable.app/api/public/whapi-webhook`;
+  const webhookUrl = form?.webhook_secret
+    ? `${webhookBase}?secret=${encodeURIComponent(form.webhook_secret)}`
+    : webhookBase;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <div>
+            <div className="text-sm font-semibold">Integração Whapi · {tenant.name}</div>
+            <div className="text-[11px] text-muted-foreground">Configuração distribuída para o tenant</div>
+          </div>
+          <button onClick={onClose} className="rounded p-1 hover:bg-accent" aria-label="Fechar">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4 px-5 py-4">
+          {!form ? (
+            <div className="text-sm text-muted-foreground">Carregando…</div>
+          ) : (
+            <>
+              <ModalField
+                label="URL base da API"
+                value={form.api_url}
+                onChange={(v) => setForm({ ...form, api_url: v })}
+                placeholder="https://gate.whapi.cloud"
+              />
+              <ModalField
+                label="Token (Bearer)"
+                type="password"
+                value={form.token}
+                onChange={(v) => setForm({ ...form, token: v })}
+                placeholder="Cole o token do canal Whapi"
+              />
+              <ModalField
+                label="Segredo do webhook"
+                type="password"
+                value={form.webhook_secret}
+                onChange={(v) => setForm({ ...form, webhook_secret: v })}
+                placeholder="Identifica este tenant no webhook"
+              />
+              <ModalField
+                label="Número / identificador do canal"
+                value={form.phone_number}
+                onChange={(v) => setForm({ ...form, phone_number: v })}
+                placeholder="+55 11 99999-9999"
+              />
+
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={form.enabled}
+                  onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+                  className="h-4 w-4 rounded border-border"
+                />
+                <span className="font-medium">Integração ativa</span>
+              </label>
+
+              <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
+                <div className="mb-1 font-semibold uppercase tracking-wider">URL do webhook</div>
+                <div className="break-all font-mono">{webhookUrl}</div>
+              </div>
+
+              {err && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  {err}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
+          <button
+            onClick={onClose}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-xs"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={save}
+            disabled={saving || !form}
+            className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? "Salvando…" : "Salvar integração"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-9 w-full rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+      />
+    </div>
+  );
+}
+
 function DohkoTenants() {
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<Tenant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [integrationTenant, setIntegrationTenant] = useState<Tenant | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -347,8 +554,17 @@ function DohkoTenants() {
           onToggleTenant={toggleActive}
           onToggleUser={toggleUserAccess}
           onRemove={remove}
+          onEditIntegration={(t) => setIntegrationTenant(t)}
         />
       </main>
+
+      {integrationTenant && (
+        <IntegrationModal
+          tenant={integrationTenant}
+          onClose={() => setIntegrationTenant(null)}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 }
