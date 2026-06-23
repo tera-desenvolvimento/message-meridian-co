@@ -46,10 +46,8 @@ export function AuthGuard({
 
   return (
     <TrialGate>
-      <div className="flex h-dvh flex-col">
-        <TrialBanner />
-        <div className="flex min-h-0 flex-1">{children}</div>
-      </div>
+      <TrialBanner />
+      {children}
     </TrialGate>
   );
 }
