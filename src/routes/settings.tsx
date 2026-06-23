@@ -213,23 +213,20 @@ function ChannelPanel() {
     }
   }, []);
 
-  const [started, setStarted] = useState(false);
-
-  // Poll while waiting for QR scan (only after user clicked "Conectar WhatsApp")
   useEffect(() => {
-    if (!started || !state || !isAdmin) return;
+    if (!isAdmin) return;
+    void fetchStatus();
+  }, [isAdmin, fetchStatus]);
+
+  // Poll while waiting for QR scan
+  useEffect(() => {
+    if (!state || !isAdmin) return;
     const isConnected = ["AUTH", "ACTIVE", "CONNECTED"].includes(state.status.toUpperCase());
     if (isConnected) return;
     const id = setInterval(fetchStatus, 5000);
     return () => clearInterval(id);
-  }, [started, state, isAdmin, fetchStatus]);
+  }, [state, isAdmin, fetchStatus]);
 
-  // Auto-load status if already connected (lightweight initial check)
-  useEffect(() => {
-    if (!isAdmin) return;
-    void fetchStatus().then(() => setStarted(true));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
 
 
   async function disconnect() {
