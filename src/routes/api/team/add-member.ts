@@ -13,9 +13,11 @@ import type { Database } from "@/integrations/supabase/types";
  * Auth: caller must be ADMIN of the workspace.
  */
 
+type AppRole = "SUPERADMIN" | "ADMIN" | "SUPERVISOR" | "AGENT";
+
 interface Body {
   email?: string;
-  role?: "ADMIN" | "AGENT";
+  role?: AppRole;
 }
 
 async function getCallerContext(token: string) {
@@ -38,7 +40,7 @@ async function getCallerContext(token: string) {
     .limit(1)
     .maybeSingle();
   if (!m) return null;
-  return { userId, workspaceId: m.workspace_id, role: m.role as "ADMIN" | "AGENT" };
+  return { userId, workspaceId: m.workspace_id, role: m.role as AppRole };
 }
 
 export const Route = createFileRoute("/api/team/add-member")({
@@ -55,7 +57,7 @@ export const Route = createFileRoute("/api/team/add-member")({
         if (!ctx) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
-        if (ctx.role !== "ADMIN") {
+        if (ctx.role !== "ADMIN" && ctx.role !== "SUPERADMIN") {
           return Response.json(
             { error: "Apenas administradores podem adicionar membros." },
             { status: 403 },
@@ -70,7 +72,15 @@ export const Route = createFileRoute("/api/team/add-member")({
         }
 
         const email = (body.email ?? "").trim().toLowerCase();
-        const role = body.role === "ADMIN" ? "ADMIN" : "AGENT";
+        const allowedRoles = ["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as const;
+        const requested = (body.role ?? "AGENT") as (typeof allowedRoles)[number];
+        let role: (typeof allowedRoles)[number] = allowedRoles.includes(requested)
+          ? requested
+          : "AGENT";
+        // Apenas SUPERADMIN pode promover outro SUPERADMIN.
+        if (role === "SUPERADMIN" && ctx.role !== "SUPERADMIN") {
+          role = "ADMIN";
+        }
 
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return Response.json({ error: "Informe um e-mail válido." }, { status: 400 });

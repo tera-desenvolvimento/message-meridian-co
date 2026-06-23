@@ -45,7 +45,7 @@ export interface Message {
 
 // ---------- Auth & Workspace ----------
 
-export type UserRole = "ADMIN" | "AGENT";
+export type UserRole = "SUPERADMIN" | "ADMIN" | "SUPERVISOR" | "AGENT";
 
 export interface AuthUser {
   id: string;

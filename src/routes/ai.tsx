@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { canManageIntegrations } from "@/lib/permissions";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 
@@ -49,7 +50,7 @@ function AiSettingsPage() {
 
 function AiSection() {
   const { user, workspace } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageIntegrations(user?.role);
   const [cfg, setCfg] = useState<AiConfig>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

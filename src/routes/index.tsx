@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/http";
 import type { Conversation, Message } from "@/lib/types";
+import { filterConversationsByRole } from "@/lib/permissions";
 import { usePolling } from "@/hooks/usePolling";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ChatArea } from "@/components/inbox/ChatArea";
@@ -177,7 +178,8 @@ function Inbox() {
 
   usePolling(() => refreshMessages(true), 6000, !!selectedId);
 
-  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+  const visibleConversations = filterConversationsByRole(conversations, user);
+  const selected = visibleConversations.find((c) => c.id === selectedId) ?? null;
   const showChatOnMobile = !!selectedId;
 
   return (
@@ -186,7 +188,7 @@ function Inbox() {
         className={`${showChatOnMobile ? "hidden" : "flex"} h-full w-full md:flex md:w-auto md:shrink-0`}
       >
         <ConversationList
-          conversations={conversations}
+          conversations={visibleConversations}
           loading={loadingConvs}
           selectedId={selectedId}
           onSelect={setSelectedId}

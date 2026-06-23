@@ -32,7 +32,7 @@ async function authenticate(request: Request) {
     .limit(1)
     .maybeSingle();
   if (!membership) return { error: jsonResponse({ error: "Workspace não encontrado" }, 404) };
-  if (membership.role !== "ADMIN") return { error: jsonResponse({ error: "Apenas administradores" }, 403) };
+  if (membership.role !== "ADMIN" && membership.role !== "SUPERADMIN") return { error: jsonResponse({ error: "Apenas administradores" }, 403) };
   return { userId, workspaceId: membership.workspace_id as string };
 }
 

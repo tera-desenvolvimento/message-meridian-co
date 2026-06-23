@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { TeamMember, UserRole } from "@/lib/types";
+import {
+  ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
+  assignableRoles,
+  canManageTeam,
+} from "@/lib/permissions";
 
 export const Route = createFileRoute("/team")({
   head: () => ({ meta: [{ title: "Equipe — Dohkochat" }] }),
@@ -34,7 +40,8 @@ function TeamPage() {
 
 function TeamPanel() {
   const { user, refresh: refreshAuth } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageTeam(user?.role);
+  const myRole = user?.role ?? null;
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +92,9 @@ function TeamPanel() {
 
         {isAdmin && <TeamCodeCard />}
 
-        {isAdmin && <AddMemberForm onAdded={refresh} />}
+        {isAdmin && <RolesInfoCard />}
+
+        {isAdmin && <AddMemberForm myRole={myRole} onAdded={refresh} />}
 
         {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -143,6 +152,7 @@ function TeamPanel() {
       {editing && (
         <EditMemberDialog
           member={editing}
+          myRole={myRole}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -210,7 +220,7 @@ function TeamCodeCard() {
   );
 }
 
-function AddMemberForm({ onAdded }: { onAdded: () => void }) {
+function AddMemberForm({ myRole, onAdded }: { myRole: UserRole | null; onAdded: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("AGENT");
   const [submitting, setSubmitting] = useState(false);
@@ -276,8 +286,11 @@ function AddMemberForm({ onAdded }: { onAdded: () => void }) {
             disabled={submitting}
             className="h-9 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
           >
-            <option value="AGENT">Agente</option>
-            <option value="ADMIN">Administrador</option>
+            {assignableRoles(myRole).map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))}
           </select>
           <button
             type="submit"
@@ -355,12 +368,16 @@ function MemberRow({
       <td className="px-4 py-3">
         <span
           className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-            member.role === "ADMIN"
-              ? "border border-primary/30 bg-primary/10 text-primary"
-              : "border border-border bg-surface-2 text-muted-foreground"
+            member.role === "SUPERADMIN"
+              ? "border border-destructive/30 bg-destructive/10 text-destructive"
+              : member.role === "ADMIN"
+                ? "border border-primary/30 bg-primary/10 text-primary"
+                : member.role === "SUPERVISOR"
+                  ? "border border-warning/30 bg-warning/10 text-warning"
+                  : "border border-border bg-surface-2 text-muted-foreground"
           }`}
         >
-          {member.role === "ADMIN" ? "Admin" : "Agente"}
+          {ROLE_LABELS[member.role]}
         </span>
       </td>
       <td className="px-4 py-3">
@@ -405,10 +422,12 @@ function MemberRow({
 
 function EditMemberDialog({
   member,
+  myRole,
   onClose,
   onSaved,
 }: {
   member: TeamMember;
+  myRole: UserRole | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -467,8 +486,11 @@ function EditMemberDialog({
               onChange={(e) => setRole(e.target.value as UserRole)}
               className="h-9 w-full rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
             >
-              <option value="AGENT">Agente</option>
-              <option value="ADMIN">Administrador</option>
+              {assignableRoles(myRole).map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </option>
+              ))}
             </select>
           </div>
           <label className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2.5">
@@ -507,6 +529,26 @@ function EditMemberDialog({
     </Dialog>
   );
 }
+
+function RolesInfoCard() {
+  return (
+    <div className="mb-4 rounded-md border border-border bg-surface p-4">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Níveis de acesso
+      </div>
+      <ul className="space-y-1.5 text-xs text-muted-foreground">
+        {(["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as UserRole[]).map((r) => (
+          <li key={r}>
+            <span className="font-medium text-foreground">{ROLE_LABELS[r]}:</span>{" "}
+            {ROLE_DESCRIPTIONS[r]}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
 
 function EditSelfDialog({
   currentName,
