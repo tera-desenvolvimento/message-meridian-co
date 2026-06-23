@@ -50,7 +50,7 @@ function ChatbotPage() {
 
   return (
     <AuthGuard>
-      <div className="flex h-dvh flex-col bg-background text-foreground">
+      <div className="flex h-dvh flex-row bg-background text-foreground">
         <AppHeader />
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-5xl px-6 py-8">
