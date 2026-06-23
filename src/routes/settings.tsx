@@ -227,6 +227,8 @@ function ChannelPanel() {
     return () => clearInterval(id);
   }, [state, isAdmin, fetchStatus]);
 
+
+
   async function disconnect() {
     if (!confirm("Desconectar o número atual do WhatsApp?")) return;
     setDisconnecting(true);
@@ -257,20 +259,42 @@ function ChannelPanel() {
   return (
     <section>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Conexão do canal</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Conexão do WhatsApp</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Disponível para provedores compatíveis com QR code (ex.: Whapi). Para outros provedores,
-          apenas as credenciais acima são necessárias.
+          Conecte seu número escaneando o QR code. A configuração da API é gerenciada pela equipe Dohko.
         </p>
       </div>
-
 
       <div className="rounded-md border border-border bg-surface p-5 space-y-4">
         {loading && !state ? (
           <div className="text-sm text-muted-foreground">Consultando canal...</div>
         ) : error ? (
-          <div className="text-sm text-destructive">{error}</div>
-        ) : !state ? null : connected ? (
+          <div className="space-y-3">
+            <div className="text-sm text-destructive">{error}</div>
+            <button
+              type="button"
+              onClick={fetchStatus}
+              disabled={loading}
+              className="inline-flex h-9 items-center rounded-md border border-border bg-surface-2 px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : !state ? (
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-sm text-muted-foreground">
+              Clique no botão abaixo para iniciar a conexão e exibir o QR code.
+            </p>
+            <button
+              type="button"
+              onClick={fetchStatus}
+              disabled={loading}
+              className="inline-flex h-10 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-60"
+            >
+              {loading ? "Conectando..." : "Conectar WhatsApp"}
+            </button>
+          </div>
+        ) : connected ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 rounded-full bg-success" />
@@ -321,7 +345,7 @@ function ChannelPanel() {
               <div className="flex flex-col items-center gap-3">
                 <img
                   src={state.qrImage}
-                  alt="QR Code Whapi"
+                  alt="QR Code WhatsApp"
                   className="h-64 w-64 rounded-md border border-border bg-white p-2"
                 />
                 <p className="max-w-xs text-center text-xs text-muted-foreground">
@@ -331,7 +355,7 @@ function ChannelPanel() {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                QR ainda não disponível. Verifique o token na seção acima.
+                Gerando QR code... aguarde alguns segundos.
               </div>
             )}
             <button
@@ -348,6 +372,7 @@ function ChannelPanel() {
     </section>
   );
 }
+
 
 function SettingsPanel() {
   const { user, workspace } = useAuth();
