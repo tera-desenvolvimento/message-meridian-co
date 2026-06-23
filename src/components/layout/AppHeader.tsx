@@ -31,9 +31,9 @@ export function AppHeader() {
   return (
     <aside className="flex h-dvh w-14 shrink-0 flex-col border-r border-border bg-card text-card-foreground md:w-56">
       <div className="flex h-12 items-center gap-2 border-b border-border px-3">
-        <img src="/logo.svg" alt="Dohkozap" className="h-6 w-auto shrink-0" />
+        <img src="/logo.svg" alt="Dohkochat" className="h-6 w-auto shrink-0" />
         <span className="hidden truncate text-sm font-bold tracking-tight md:inline">
-          Dohkozap
+          Dohkochat
         </span>
       </div>
 

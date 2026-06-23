@@ -6,7 +6,7 @@ import { AuthShell, ErrorBox, Field, PrimaryButton } from "@/components/auth/Aut
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Entrar na equipe — Dohkozap" }] }),
+  head: () => ({ meta: [{ title: "Entrar na equipe — Dohkochat" }] }),
   component: OnboardingPage,
 });
 

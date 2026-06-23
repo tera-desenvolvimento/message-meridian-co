@@ -17,8 +17,8 @@ export function AuthShell({
     <div className="flex min-h-dvh w-full bg-background text-foreground">
       <div className="hidden w-1/2 flex-col justify-between border-r border-border bg-primary p-10 lg:flex">
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
-          <img src="/logo.svg" alt="Dohkozap" className="h-32 w-auto shrink-0" />
-          <span className="text-3xl font-bold tracking-tight text-white">Dohkozap</span>
+          <img src="/logo.svg" alt="Dohkochat" className="h-32 w-auto shrink-0" />
+          <span className="text-3xl font-bold tracking-tight text-white">Dohkochat</span>
         </div>
         <div className="space-y-3">
           <h2 className="text-2xl font-semibold leading-tight tracking-tight text-white">
@@ -35,8 +35,8 @@ export function AuthShell({
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
         <div className="w-full max-w-sm space-y-8">
           <div className="flex flex-col items-center justify-center space-y-4 mb-8 lg:hidden bg-primary p-8 rounded-xl">
-            <img src="/logo.svg" alt="Dohkozap" className="h-20 w-auto shrink-0" />
-            <span className="text-xl font-bold tracking-tight text-white">Dohkozap</span>
+            <img src="/logo.svg" alt="Dohkochat" className="h-20 w-auto shrink-0" />
+            <span className="text-xl font-bold tracking-tight text-white">Dohkochat</span>
           </div>
           <div className="space-y-1.5">
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

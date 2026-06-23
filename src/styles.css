@@ -42,7 +42,7 @@
 
 :root {
   --radius: 6px;
-  /* Dohkozap colors */
+  /* Dohkochat colors */
   --background: oklch(0.99 0.003 260);
   --foreground: oklch(0.20 0.010 260);
   --surface: oklch(0.975 0.004 260);
@@ -72,7 +72,7 @@
 }
 
 .dark {
-  /* Dohkozap dark theme */
+  /* Dohkochat dark theme */
   --background: oklch(0.16 0.008 260);
   --foreground: oklch(0.96 0.005 260);
   --surface: oklch(0.19 0.008 260);
