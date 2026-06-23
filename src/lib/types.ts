@@ -59,6 +59,8 @@ export interface Workspace {
   id: string;
   name: string;
   createdAt: string;
+  trialEndsAt: string;
+  subscriptionActive: boolean;
 }
 
 export interface TeamMember {
