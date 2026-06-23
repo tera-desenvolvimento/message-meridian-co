@@ -68,7 +68,7 @@ export function AppHeader() {
             {user?.name}
           </div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            {user?.role === "ADMIN" ? "Admin" : "Agente"}
+            {user?.role ? ROLE_LABELS[user.role] : "—"}
           </div>
         </div>
         <button
