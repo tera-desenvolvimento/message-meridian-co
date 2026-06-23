@@ -29,7 +29,7 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-primary px-3 sm:px-4 text-white">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:px-4 text-card-foreground">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <img src="/logo.svg" alt="Dohkozap" className="h-6 w-auto shrink-0" />
@@ -50,14 +50,14 @@ export function AppHeader() {
                 className={cn(
                   "relative inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition sm:px-3",
                   active
-                    ? "text-white bg-white/10"
-                    : "text-white/70 hover:bg-white/5 hover:text-white",
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                 )}
               >
                 <Icon className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{item.label}</span>
                 {active && (
-                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-accent" />
+                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-primary" />
                 )}
               </Link>
             );
@@ -67,8 +67,8 @@ export function AppHeader() {
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <div className="hidden text-right md:block">
-          <div className="text-xs font-medium leading-tight text-white">{user?.name}</div>
-          <div className="text-[10px] uppercase tracking-wider text-white/60">
+          <div className="text-xs font-medium leading-tight text-foreground">{user?.name}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {user?.role === "ADMIN" ? "Admin" : "Agente"}
           </div>
         </div>
@@ -76,7 +76,7 @@ export function AppHeader() {
           onClick={toggle}
           aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
           title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/20 bg-white/10 text-white transition hover:border-white/40 hover:text-white"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition hover:bg-accent hover:text-accent-foreground"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
@@ -84,7 +84,7 @@ export function AppHeader() {
           onClick={logout}
           title="Sair"
           aria-label="Sair"
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-2 text-xs font-medium text-white transition hover:border-white/40 hover:text-white sm:px-3"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground sm:px-3"
         >
           <LogOut className="h-3.5 w-3.5 sm:hidden" />
           <span className="hidden sm:inline">Sair</span>
