@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
+import { TrialBanner, TrialGate } from "@/components/trial/TrialBanner";
 
 /**
  * Guards client routes. Redirects to /login if no token, or to /onboarding
@@ -41,5 +42,12 @@ export function AuthGuard({
   if (!isAuthenticated) return null;
   if (requireWorkspace && user && !user.workspaceId) return null;
 
-  return <>{children}</>;
+  if (!requireWorkspace) return <>{children}</>;
+
+  return (
+    <TrialGate>
+      <TrialBanner />
+      {children}
+    </TrialGate>
+  );
 }

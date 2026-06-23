@@ -338,12 +338,18 @@ export const api = {
     if (!m) return null;
     const { data, error } = await supabase
       .from("workspaces")
-      .select("id, name, created_at")
+      .select("id, name, created_at, trial_ends_at, subscription_active")
       .eq("id", m.workspace_id)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    return { id: data.id, name: data.name, createdAt: data.created_at };
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at,
+      trialEndsAt: (data as any).trial_ends_at,
+      subscriptionActive: (data as any).subscription_active ?? false,
+    };
   },
 
   async createWorkspace(name: string): Promise<Workspace> {
@@ -369,7 +375,7 @@ export const api = {
 
     const { data: ws, error: selectError } = await supabase
       .from("workspaces")
-      .select("id, name, created_at")
+      .select("id, name, created_at, trial_ends_at, subscription_active")
       .eq("id", workspaceId)
       .single();
 
@@ -377,7 +383,13 @@ export const api = {
       throw new Error("Workspace criado, mas não foi possível carregar os dados. Recarregue a página.");
     }
 
-    return { id: ws.id, name: ws.name, createdAt: ws.created_at };
+    return {
+      id: ws.id,
+      name: ws.name,
+      createdAt: ws.created_at,
+      trialEndsAt: (ws as any).trial_ends_at,
+      subscriptionActive: (ws as any).subscription_active ?? false,
+    };
   },
 
   // ---------- Team ----------
@@ -643,6 +655,8 @@ export const api = {
       id: json.workspace.id,
       name: json.workspace.name,
       createdAt: json.workspace.createdAt,
+      trialEndsAt: json.workspace.trialEndsAt ?? new Date().toISOString(),
+      subscriptionActive: json.workspace.subscriptionActive ?? false,
     };
   },
 
