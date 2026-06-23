@@ -213,7 +213,13 @@ function ChannelPanel() {
     }
   }, []);
 
-  // Poll while waiting for QR scan (only after user initiated connection)
+  // Auto-check on mount so already-connected workspaces show status immediately
+  useEffect(() => {
+    if (!isAdmin) return;
+    void fetchStatus();
+  }, [isAdmin, fetchStatus]);
+
+  // Poll while waiting for QR scan
   useEffect(() => {
     if (!state || !isAdmin) return;
     const isConnected = ["AUTH", "ACTIVE", "CONNECTED"].includes(state.status.toUpperCase());
@@ -221,6 +227,7 @@ function ChannelPanel() {
     const id = setInterval(fetchStatus, 5000);
     return () => clearInterval(id);
   }, [state, isAdmin, fetchStatus]);
+
 
 
 
