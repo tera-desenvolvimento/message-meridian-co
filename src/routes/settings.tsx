@@ -329,14 +329,6 @@ function ChannelPanel() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={fetchStatus}
-                disabled={loading}
-                className="inline-flex h-9 items-center rounded-md border border-border bg-surface-2 px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
-              >
-                Atualizar
-              </button>
-              <button
-                type="button"
                 onClick={disconnect}
                 disabled={disconnecting}
                 className="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
