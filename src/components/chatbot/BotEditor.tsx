@@ -79,10 +79,21 @@ const TransferNode = ({ data, selected }: NodeProps) => (
   </BaseNode>
 );
 
+const AiNode = ({ data, selected }: NodeProps) => (
+  <BaseNode title="IA" icon={Sparkles} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!bg-primary" />
+    <p className="line-clamp-3 text-xs text-muted-foreground">
+      {(data.system_prompt as string) || (data.content as string) || 'Configure o prompt do sistema'}
+    </p>
+    <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+  </BaseNode>
+);
+
 const nodeTypes = {
   message: MessageNode,
   choice: ChoiceNode,
   transfer: TransferNode,
+  ai: AiNode,
 };
 
 // --- Editor Component ---
