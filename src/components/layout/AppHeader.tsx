@@ -23,8 +23,8 @@ export function AppHeader() {
     label: string;
     icon: typeof Inbox;
   }[] = [
-    { to: "/", label: "Caixa de entrada", icon: Inbox },
     { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
+    { to: "/", label: "Caixa de entrada", icon: Inbox },
     { to: "/team", label: "Equipe", icon: Users },
     { to: "/chatbot", label: "Chatbot", icon: Bot },
     { to: "/ai", label: "IA", icon: Sparkles },
