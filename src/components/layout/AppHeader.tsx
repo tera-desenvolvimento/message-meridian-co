@@ -3,6 +3,7 @@ import { Bot, Inbox, LogOut, Moon, Settings as SettingsIcon, Sparkles, Sun, User
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 /**
  * Barra lateral esquerda com a navegação principal do app autenticado.
