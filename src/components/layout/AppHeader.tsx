@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bot, Inbox, LogOut, Moon, Settings as SettingsIcon, Sparkles, Sun, Users } from "lucide-react";
+import { BarChart3, Bot, Inbox, LogOut, Moon, Settings as SettingsIcon, Sparkles, Sun, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";

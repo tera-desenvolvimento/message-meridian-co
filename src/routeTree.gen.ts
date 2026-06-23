@@ -18,6 +18,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DohkoRouteImport } from './routes/dohko'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChatbotRouteImport } from './routes/chatbot'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminExportRouteImport } from './routes/admin-export'
@@ -87,6 +88,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const DohkoRoute = DohkoRouteImport.update({
   id: '/dohko',
   path: '/dohko',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatbotRoute = ChatbotRouteImport.update({
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dashboard': typeof DashboardRoute
   '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dashboard': typeof DashboardRoute
   '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dashboard'
     | '/dohko'
     | '/forgot-password'
     | '/login'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dashboard'
     | '/dohko'
     | '/forgot-password'
     | '/login'
@@ -443,6 +455,7 @@ export interface RootRouteChildren {
   AdminExportRoute: typeof AdminExportRoute
   AiRoute: typeof AiRoute
   ChatbotRoute: typeof ChatbotRoute
+  DashboardRoute: typeof DashboardRoute
   DohkoRoute: typeof DohkoRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -535,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/dohko'
       fullPath: '/dohko'
       preLoaderRoute: typeof DohkoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chatbot': {
@@ -733,6 +753,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminExportRoute: AdminExportRoute,
   AiRoute: AiRoute,
   ChatbotRoute: ChatbotRoute,
+  DashboardRoute: DashboardRoute,
   DohkoRoute: DohkoRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
