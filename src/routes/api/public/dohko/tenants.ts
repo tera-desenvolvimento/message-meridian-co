@@ -1,6 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireDohkoAdmin } from "@/lib/dohko-auth.server";
+
+interface DohkoTenantPatch {
+  id?: string;
+  name?: string;
+  active?: boolean;
+  membershipId?: string;
+  membershipActive?: boolean;
+}
+
+interface ProfileRow {
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+interface MembershipRow {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+}
+
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 /**
  * /api/public/dohko/tenants
@@ -19,6 +46,8 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
         const auth = await requireDohkoAdmin(request);
         if (auth instanceof Response) return auth;
 
+        const supabaseAdmin = await getAdminClient();
+
         const { data: workspaces, error } = await supabaseAdmin
           .from("workspaces")
           .select("id, name, created_at, active, created_by")
@@ -29,7 +58,7 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
         const [membersRes, integrationsRes] = await Promise.all([
           supabaseAdmin
             .from("memberships")
-            .select("workspace_id, user_id")
+            .select("id, workspace_id, user_id, role, active, created_at")
             .in("workspace_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
           supabaseAdmin
             .from("workspace_integrations")
@@ -37,9 +66,25 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
             .in("workspace_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
         ]);
 
+        if (membersRes.error) return Response.json({ error: membersRes.error.message }, { status: 500 });
+        if (integrationsRes.error) return Response.json({ error: integrationsRes.error.message }, { status: 500 });
+
+        const memberships = (membersRes.data ?? []) as MembershipRow[];
+        const userIds = Array.from(new Set(memberships.map((m) => m.user_id)));
+        const profilesRes = await supabaseAdmin
+          .from("profiles")
+          .select("id, name, email")
+          .in("id", userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+        if (profilesRes.error) return Response.json({ error: profilesRes.error.message }, { status: 500 });
+
         const memberCount = new Map<string, number>();
-        for (const m of membersRes.data ?? []) {
+        const usersByWorkspace = new Map<string, Array<MembershipRow & { profile: ProfileRow | null }>>();
+        const profileById = new Map((profilesRes.data ?? []).map((p) => [p.id, p as ProfileRow]));
+        for (const m of memberships) {
           memberCount.set(m.workspace_id, (memberCount.get(m.workspace_id) ?? 0) + 1);
+          const list = usersByWorkspace.get(m.workspace_id) ?? [];
+          list.push({ ...m, profile: profileById.get(m.user_id) ?? null });
+          usersByWorkspace.set(m.workspace_id, list);
         }
         const integrationByWs = new Map<string, { provider: string; phone_number: string | null }>();
         for (const i of integrationsRes.data ?? []) {
@@ -55,6 +100,15 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
             createdBy: w.created_by,
             members: memberCount.get(w.id) ?? 0,
             integration: integrationByWs.get(w.id) ?? null,
+            users: (usersByWorkspace.get(w.id) ?? []).map((m) => ({
+              membershipId: m.id,
+              id: m.user_id,
+              name: m.profile?.name ?? "Usuário sem perfil",
+              email: m.profile?.email ?? "sem e-mail",
+              role: m.role,
+              active: m.active,
+              joinedAt: m.created_at,
+            })),
           })),
         });
       },
@@ -62,6 +116,7 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
       POST: async ({ request }) => {
         const auth = await requireDohkoAdmin(request);
         if (auth instanceof Response) return auth;
+        const supabaseAdmin = await getAdminClient();
         const body = (await request.json().catch(() => ({}))) as { name?: string };
         const name = (body.name ?? "").trim();
         if (!name || name.length > 80) {
@@ -69,8 +124,7 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
         }
         const { data, error } = await supabaseAdmin
           .from("workspaces")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .insert({ name, active: true, created_by: null } as any)
+          .insert({ name, active: true, created_by: null })
           .select("id, name, active, created_at")
           .single();
         if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -80,11 +134,20 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
       PATCH: async ({ request }) => {
         const auth = await requireDohkoAdmin(request);
         if (auth instanceof Response) return auth;
-        const body = (await request.json().catch(() => ({}))) as {
-          id?: string;
-          name?: string;
-          active?: boolean;
-        };
+        const supabaseAdmin = await getAdminClient();
+        const body = (await request.json().catch(() => ({}))) as DohkoTenantPatch;
+
+        if (body.membershipId && typeof body.membershipActive === "boolean") {
+          const { data, error } = await supabaseAdmin
+            .from("memberships")
+            .update({ active: body.membershipActive })
+            .eq("id", body.membershipId)
+            .select("id, active")
+            .single();
+          if (error) return Response.json({ error: error.message }, { status: 500 });
+          return Response.json({ membership: data });
+        }
+
         if (!body.id) return Response.json({ error: "id obrigatório" }, { status: 400 });
         const patch: { name?: string; active?: boolean } = {};
         if (typeof body.name === "string") {
@@ -109,6 +172,7 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
       DELETE: async ({ request }) => {
         const auth = await requireDohkoAdmin(request);
         if (auth instanceof Response) return auth;
+        const supabaseAdmin = await getAdminClient();
         const id = new URL(request.url).searchParams.get("id");
         if (!id) return Response.json({ error: "id obrigatório" }, { status: 400 });
         const { error } = await supabaseAdmin.from("workspaces").delete().eq("id", id);
