@@ -540,7 +540,7 @@ export type Database = {
       conversation_priority: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       conversation_status: "OPEN" | "PENDING" | "CLOSED"
       conversation_type: "PRIVATE" | "GROUP"
-      user_role: "ADMIN" | "AGENT"
+      user_role: "ADMIN" | "AGENT" | "SUPERADMIN" | "SUPERVISOR"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -671,7 +671,7 @@ export const Constants = {
       conversation_priority: ["LOW", "NORMAL", "HIGH", "URGENT"],
       conversation_status: ["OPEN", "PENDING", "CLOSED"],
       conversation_type: ["PRIVATE", "GROUP"],
-      user_role: ["ADMIN", "AGENT"],
+      user_role: ["ADMIN", "AGENT", "SUPERADMIN", "SUPERVISOR"],
     },
   },
 } as const
