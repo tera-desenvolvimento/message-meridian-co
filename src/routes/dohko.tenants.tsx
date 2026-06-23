@@ -90,7 +90,7 @@ function TenantUsers({ users, onToggleUser }: { users: TenantUser[]; onToggleUse
   );
 }
 
-function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove }: TenantTableProps) {
+function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove, onEditIntegration }: TenantTableProps) {
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
       <table className="w-full text-sm">
@@ -125,6 +125,7 @@ function TenantTable({ tenants, onRename, onToggleTenant, onToggleUser, onRemove
                 onToggleTenant={onToggleTenant}
                 onToggleUser={onToggleUser}
                 onRemove={onRemove}
+                onEditIntegration={onEditIntegration}
               />
             ))
           )}
