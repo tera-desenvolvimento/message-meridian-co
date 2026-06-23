@@ -15,7 +15,7 @@ import {
   OnConnect,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Bot, MessageSquare, ListTree, UserPlus, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Bot, MessageSquare, ListTree, UserPlus, Save, X, Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,10 +79,21 @@ const TransferNode = ({ data, selected }: NodeProps) => (
   </BaseNode>
 );
 
+const AiNode = ({ data, selected }: NodeProps) => (
+  <BaseNode title="IA" icon={Sparkles} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!bg-primary" />
+    <p className="line-clamp-3 text-xs text-muted-foreground">
+      {(data.system_prompt as string) || (data.content as string) || 'Configure o prompt do sistema'}
+    </p>
+    <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+  </BaseNode>
+);
+
 const nodeTypes = {
   message: MessageNode,
   choice: ChoiceNode,
   transfer: TransferNode,
+  ai: AiNode,
 };
 
 // --- Editor Component ---
@@ -171,17 +182,23 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
     setSaving(false);
   };
 
-  const addNode = (type: 'message' | 'choice' | 'transfer') => {
+  const addNode = (type: 'message' | 'choice' | 'transfer' | 'ai') => {
     const id = `${type}-${Date.now()}`;
+    const defaults: Record<string, any> = {
+      message: { content: 'Olá, como posso ajudar?' },
+      choice: { content: 'Escolha uma opção:', options: [{ label: 'Opção 1' }] },
+      transfer: { content: 'Transferindo para um atendente...' },
+      ai: {
+        content: 'Aguarde, estou pensando...',
+        system_prompt:
+          'Você é um assistente de atendimento. Responda de forma clara, breve e cordial em português.',
+      },
+    };
     const newNode: Node = {
       id,
       type,
       position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { 
-        name: `Novo ${type}`,
-        content: type === 'transfer' ? 'Transferindo...' : 'Olá, como posso ajudar?',
-        ...(type === 'choice' ? { options: [{ label: 'Opção 1' }] } : {})
-      },
+      data: { name: `Novo ${type}`, ...defaults[type] },
     };
     setNodes((nds) => [...nds, newNode]);
   };
@@ -225,6 +242,9 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
           </Button>
           <Button variant="outline" size="sm" onClick={() => addNode('transfer')} className="gap-2">
             <Plus className="h-3.5 w-3.5" /> Bloco de Transbordo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => addNode('ai')} className="gap-2">
+            <Sparkles className="h-3.5 w-3.5" /> Bloco de IA
           </Button>
           <Button onClick={handleSave} disabled={saving} className="ml-4 gap-2">
             <Save className="h-4 w-4" />
@@ -272,13 +292,32 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
 
               {selectedNode.type !== 'transfer' && (
                 <div className="space-y-2">
-                  <Label>Mensagem</Label>
-                  <Textarea 
-                    rows={4}
-                    value={(selectedNode.data as any).content || ''} 
+                  <Label>{selectedNode.type === 'ai' ? 'Mensagem de fallback' : 'Mensagem'}</Label>
+                  <Textarea
+                    rows={selectedNode.type === 'ai' ? 2 : 4}
+                    value={(selectedNode.data as any).content || ''}
                     onChange={(e) => updateNodeData(selectedNode.id, { content: e.target.value })}
-                    placeholder="Digite a mensagem que o bot enviará..."
+                    placeholder={
+                      selectedNode.type === 'ai'
+                        ? 'Texto enviado se a IA falhar...'
+                        : 'Digite a mensagem que o bot enviará...'
+                    }
                   />
+                </div>
+              )}
+
+              {selectedNode.type === 'ai' && (
+                <div className="space-y-2">
+                  <Label>Prompt do sistema</Label>
+                  <Textarea
+                    rows={6}
+                    value={(selectedNode.data as any).system_prompt || ''}
+                    onChange={(e) => updateNodeData(selectedNode.id, { system_prompt: e.target.value })}
+                    placeholder="Instruções para a IA: papel, tom, restrições, base de conhecimento..."
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    A IA usa o provedor configurado em <strong>IA</strong> e responde com base nas últimas mensagens da conversa.
+                  </p>
                 </div>
               )}
 
