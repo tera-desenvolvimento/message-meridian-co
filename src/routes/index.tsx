@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/http";
 import type { Conversation, Message } from "@/lib/types";
+import { filterConversationsByRole } from "@/lib/permissions";
 import { usePolling } from "@/hooks/usePolling";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ChatArea } from "@/components/inbox/ChatArea";
