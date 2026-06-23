@@ -34,7 +34,7 @@ import {
 export const Route = createFileRoute("/chatbot")({
   head: () => ({
     meta: [
-      { title: "Chatbot — Dohkozap" },
+      { title: "Chatbot — Dohkochat" },
       { name: "description", content: "Gerenciamento de fluxos de automação." },
     ],
   }),

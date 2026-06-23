@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import type { TeamMember, UserRole } from "@/lib/types";
 
 export const Route = createFileRoute("/team")({
-  head: () => ({ meta: [{ title: "Equipe — Dohkozap" }] }),
+  head: () => ({ meta: [{ title: "Equipe — Dohkochat" }] }),
   component: TeamPage,
 });
 
