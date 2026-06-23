@@ -92,7 +92,9 @@ function TeamPanel() {
 
         {isAdmin && <TeamCodeCard />}
 
-        {isAdmin && <AddMemberForm onAdded={refresh} />}
+        {isAdmin && <RolesInfoCard />}
+
+        {isAdmin && <AddMemberForm myRole={myRole} onAdded={refresh} />}
 
         {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
