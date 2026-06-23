@@ -292,13 +292,32 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
 
               {selectedNode.type !== 'transfer' && (
                 <div className="space-y-2">
-                  <Label>Mensagem</Label>
-                  <Textarea 
-                    rows={4}
-                    value={(selectedNode.data as any).content || ''} 
+                  <Label>{selectedNode.type === 'ai' ? 'Mensagem de fallback' : 'Mensagem'}</Label>
+                  <Textarea
+                    rows={selectedNode.type === 'ai' ? 2 : 4}
+                    value={(selectedNode.data as any).content || ''}
                     onChange={(e) => updateNodeData(selectedNode.id, { content: e.target.value })}
-                    placeholder="Digite a mensagem que o bot enviará..."
+                    placeholder={
+                      selectedNode.type === 'ai'
+                        ? 'Texto enviado se a IA falhar...'
+                        : 'Digite a mensagem que o bot enviará...'
+                    }
                   />
+                </div>
+              )}
+
+              {selectedNode.type === 'ai' && (
+                <div className="space-y-2">
+                  <Label>Prompt do sistema</Label>
+                  <Textarea
+                    rows={6}
+                    value={(selectedNode.data as any).system_prompt || ''}
+                    onChange={(e) => updateNodeData(selectedNode.id, { system_prompt: e.target.value })}
+                    placeholder="Instruções para a IA: papel, tom, restrições, base de conhecimento..."
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    A IA usa o provedor configurado em <strong>IA</strong> e responde com base nas últimas mensagens da conversa.
+                  </p>
                 </div>
               )}
 
