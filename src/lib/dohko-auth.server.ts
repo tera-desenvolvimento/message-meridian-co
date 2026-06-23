@@ -94,11 +94,11 @@ export function checkDohkoCredentials(code: string, password: string): boolean {
 }
 
 export function sessionCookieHeader(token: string): string {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${TTL_SECONDS}`;
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${TTL_SECONDS}`;
 }
 
 export function clearSessionCookieHeader(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0`;
 }
 
 export function readSessionCookie(cookieHeader: string | null): string | null {
