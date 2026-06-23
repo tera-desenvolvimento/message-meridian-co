@@ -34,7 +34,7 @@ function InboxShell() {
   // Don't fetch inbox until authenticated and workspace assigned.
   const ready = isAuthenticated && !!user?.workspaceId;
   return (
-    <div className="flex h-dvh flex-col bg-background text-foreground">
+    <div className="flex h-dvh flex-row bg-background text-foreground">
       <AppHeader />
       <div className="flex min-h-0 flex-1">{ready && <Inbox />}</div>
     </div>

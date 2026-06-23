@@ -32,7 +32,7 @@ const EMPTY: Integration = {
 function SettingsPage() {
   return (
     <AuthGuard>
-      <div className="flex h-dvh flex-col bg-background text-foreground">
+      <div className="flex h-dvh flex-row bg-background text-foreground">
         <AppHeader />
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-8 px-6 py-8">

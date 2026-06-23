@@ -24,7 +24,7 @@ export const Route = createFileRoute("/team")({
 function TeamPage() {
   return (
     <AuthGuard>
-      <div className="flex h-dvh flex-col bg-background text-foreground">
+      <div className="flex h-dvh flex-row bg-background text-foreground">
         <AppHeader />
         <TeamPanel />
       </div>
