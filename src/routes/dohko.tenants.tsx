@@ -554,8 +554,17 @@ function DohkoTenants() {
           onToggleTenant={toggleActive}
           onToggleUser={toggleUserAccess}
           onRemove={remove}
+          onEditIntegration={(t) => setIntegrationTenant(t)}
         />
       </main>
+
+      {integrationTenant && (
+        <IntegrationModal
+          tenant={integrationTenant}
+          onClose={() => setIntegrationTenant(null)}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 }
