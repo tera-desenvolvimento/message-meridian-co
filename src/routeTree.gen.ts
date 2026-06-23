@@ -23,6 +23,7 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminExportRouteImport } from './routes/admin-export'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DohkoIndexRouteImport } from './routes/dohko.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DohkoTenantsRouteImport } from './routes/dohko.tenants'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -112,6 +113,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DohkoIndexRoute = DohkoIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DohkoRoute,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
@@ -230,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/dohko/': typeof DohkoIndexRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -254,7 +261,6 @@ export interface FileRoutesByTo {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
-  '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -265,6 +271,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/dohko': typeof DohkoIndexRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -301,6 +308,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/dohko/': typeof DohkoIndexRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
   '/api/public/whapi-webhook': typeof ApiPublicWhapiWebhookRoute
@@ -338,6 +346,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/dohko/tenants'
     | '/email/unsubscribe'
+    | '/dohko/'
     | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -362,7 +371,6 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
-    | '/dohko'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -373,6 +381,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/dohko/tenants'
     | '/email/unsubscribe'
+    | '/dohko'
     | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/dohko/tenants'
     | '/email/unsubscribe'
+    | '/dohko/'
     | '/api/admin/export'
     | '/api/public/accept-invite'
     | '/api/public/whapi-webhook'
@@ -562,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dohko/': {
+      id: '/dohko/'
+      path: '/'
+      fullPath: '/dohko/'
+      preLoaderRoute: typeof DohkoIndexRouteImport
+      parentRoute: typeof DohkoRoute
+    }
     '/email/unsubscribe': {
       id: '/email/unsubscribe'
       path: '/email/unsubscribe'
@@ -700,10 +717,12 @@ declare module '@tanstack/react-router' {
 
 interface DohkoRouteChildren {
   DohkoTenantsRoute: typeof DohkoTenantsRoute
+  DohkoIndexRoute: typeof DohkoIndexRoute
 }
 
 const DohkoRouteChildren: DohkoRouteChildren = {
   DohkoTenantsRoute: DohkoTenantsRoute,
+  DohkoIndexRoute: DohkoIndexRoute,
 }
 
 const DohkoRouteWithChildren = DohkoRoute._addFileChildren(DohkoRouteChildren)
