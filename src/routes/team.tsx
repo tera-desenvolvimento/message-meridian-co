@@ -486,8 +486,11 @@ function EditMemberDialog({
               onChange={(e) => setRole(e.target.value as UserRole)}
               className="h-9 w-full rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
             >
-              <option value="AGENT">Agente</option>
-              <option value="ADMIN">Administrador</option>
+              {assignableRoles(myRole).map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </option>
+              ))}
             </select>
           </div>
           <label className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2.5">
