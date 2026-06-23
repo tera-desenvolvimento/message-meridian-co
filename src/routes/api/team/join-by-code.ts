@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/team/join-by-code")({
         // Validate workspace exists
         const { data: ws, error: wsErr } = await supabaseAdmin
           .from("workspaces")
-          .select("id, name, created_at")
+          .select("id, name, created_at, trial_ends_at, subscription_active")
           .eq("id", code)
           .maybeSingle();
         if (wsErr) {
@@ -93,7 +93,7 @@ export const Route = createFileRoute("/api/team/join-by-code")({
           return Response.json({
             ok: true,
             reactivated: !existing.active,
-            workspace: { id: ws.id, name: ws.name, createdAt: ws.created_at },
+            workspace: { id: ws.id, name: ws.name, createdAt: ws.created_at, trialEndsAt: (ws as any).trial_ends_at, subscriptionActive: (ws as any).subscription_active },
           });
         }
 
@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/team/join-by-code")({
 
         return Response.json({
           ok: true,
-          workspace: { id: ws.id, name: ws.name, createdAt: ws.created_at },
+          workspace: { id: ws.id, name: ws.name, createdAt: ws.created_at, trialEndsAt: (ws as any).trial_ends_at, subscriptionActive: (ws as any).subscription_active },
         });
       },
     },
