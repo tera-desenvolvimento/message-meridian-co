@@ -173,12 +173,10 @@ function AccountSection() {
 }
 
 function IntegrationSection() {
-  return (
-    <>
-      <SettingsPanel />
-      <ChannelPanel />
-    </>
-  );
+  // Configuração de API (URL, token, webhook) é responsabilidade do Super Admin
+  // Dohko e é provisionada para o tenant. Aqui o usuário do workspace apenas
+  // conecta o canal e escaneia o QR code.
+  return <ChannelPanel />;
 }
 
 function ChannelPanel() {
