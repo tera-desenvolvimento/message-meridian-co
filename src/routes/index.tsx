@@ -178,7 +178,8 @@ function Inbox() {
 
   usePolling(() => refreshMessages(true), 6000, !!selectedId);
 
-  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+  const visibleConversations = filterConversationsByRole(conversations, user);
+  const selected = visibleConversations.find((c) => c.id === selectedId) ?? null;
   const showChatOnMobile = !!selectedId;
 
   return (
