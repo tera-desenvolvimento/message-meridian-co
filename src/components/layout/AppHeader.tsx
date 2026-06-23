@@ -5,14 +5,14 @@ import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 /**
- * Top app bar shown on authenticated pages. Workspace identity + nav + logout.
+ * Barra lateral esquerda com a navegação principal do app autenticado.
  *
- * Em telas pequenas, a navegação aparece como ícones para economizar espaço,
- * e o e-mail/role do usuário fica oculto. O nome do workspace é truncado para
- * evitar quebras de layout.
+ * Em telas pequenas exibe apenas ícones (w-14); em telas md+ expande
+ * para mostrar os rótulos (w-56). Mantém o nome do componente
+ * `AppHeader` por compatibilidade com as rotas que já o importam.
  */
 export function AppHeader() {
-  const { user, workspace, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const location = useLocation();
   const path = location.pathname;
@@ -29,45 +29,43 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:px-4 text-card-foreground">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <img src="/logo.svg" alt="Dohkozap" className="h-6 w-auto shrink-0" />
-          <span className="hidden truncate text-sm font-bold tracking-tight sm:inline">
-            Dohkozap
-          </span>
-        </div>
-        <nav className="flex items-center gap-0.5 sm:gap-1">
-          {items.map((item) => {
-            const active = item.to === "/" ? path === "/" : path.startsWith(item.to);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={item.label}
-                aria-label={item.label}
-                className={cn(
-                  "relative inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition sm:px-3",
-                  active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4 sm:hidden" />
-                <span className="hidden sm:inline">{item.label}</span>
-                {active && (
-                  <span className="pointer-events-none absolute -bottom-px left-2 right-2 h-0.5 rounded bg-primary" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+    <aside className="flex h-dvh w-14 shrink-0 flex-col border-r border-border bg-card text-card-foreground md:w-56">
+      <div className="flex h-12 items-center gap-2 border-b border-border px-3">
+        <img src="/logo.svg" alt="Dohkozap" className="h-6 w-auto shrink-0" />
+        <span className="hidden truncate text-sm font-bold tracking-tight md:inline">
+          Dohkozap
+        </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <div className="hidden text-right md:block">
-          <div className="text-xs font-medium leading-tight text-foreground">{user?.name}</div>
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
+        {items.map((item) => {
+          const active = item.to === "/" ? path === "/" : path.startsWith(item.to);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              aria-label={item.label}
+              className={cn(
+                "inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-medium transition md:px-3",
+                active
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="hidden md:inline">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="flex flex-col gap-2 border-t border-border p-2">
+        <div className="hidden px-1 md:block">
+          <div className="truncate text-xs font-medium leading-tight text-foreground">
+            {user?.name}
+          </div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {user?.role === "ADMIN" ? "Admin" : "Agente"}
           </div>
@@ -76,20 +74,23 @@ export function AppHeader() {
           onClick={toggle}
           aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
           title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition hover:bg-accent hover:text-accent-foreground"
+          className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          <span className="hidden md:inline">
+            {theme === "dark" ? "Modo claro" : "Modo escuro"}
+          </span>
         </button>
         <button
           onClick={logout}
           title="Sair"
           aria-label="Sair"
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground sm:px-3"
+          className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground"
         >
-          <LogOut className="h-3.5 w-3.5 sm:hidden" />
-          <span className="hidden sm:inline">Sair</span>
+          <LogOut className="h-4 w-4" />
+          <span className="hidden md:inline">Sair</span>
         </button>
       </div>
-    </header>
+    </aside>
   );
 }
