@@ -286,8 +286,11 @@ function AddMemberForm({ myRole, onAdded }: { myRole: UserRole | null; onAdded: 
             disabled={submitting}
             className="h-9 rounded-md border border-border bg-input px-3 text-sm outline-none focus:border-primary"
           >
-            <option value="AGENT">Agente</option>
-            <option value="ADMIN">Administrador</option>
+            {assignableRoles(myRole).map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))}
           </select>
           <button
             type="submit"
