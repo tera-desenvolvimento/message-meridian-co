@@ -40,7 +40,8 @@ function TeamPage() {
 
 function TeamPanel() {
   const { user, refresh: refreshAuth } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageTeam(user?.role);
+  const myRole = user?.role ?? null;
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
