@@ -220,7 +220,7 @@ function TeamCodeCard() {
   );
 }
 
-function AddMemberForm({ onAdded }: { onAdded: () => void }) {
+function AddMemberForm({ myRole, onAdded }: { myRole: UserRole | null; onAdded: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("AGENT");
   const [submitting, setSubmitting] = useState(false);
