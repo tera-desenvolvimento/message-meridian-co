@@ -258,11 +258,13 @@ function ChannelPanel() {
   return (
     <section>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Conexão do WhatsApp</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Conexão do canal</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Gerencie o número conectado ao canal Whapi.
+          Disponível para provedores compatíveis com QR code (ex.: Whapi). Para outros provedores,
+          apenas as credenciais acima são necessárias.
         </p>
       </div>
+
 
       <div className="rounded-md border border-border bg-surface p-5 space-y-4">
         {loading && !state ? (
@@ -430,9 +432,10 @@ function SettingsPanel() {
   return (
     <section>
         <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Configurações</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Integração de mensageria</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Integração do WhatsApp via Whapi para este workspace.
+            Conecte qualquer provedor de API compatível (Whapi, Z-API, Evolution, Twilio etc.)
+            informando os parâmetros padrão abaixo.
           </p>
         </div>
 
@@ -449,9 +452,9 @@ function SettingsPanel() {
             <section className="rounded-md border border-border bg-surface p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold">WhatsApp (Whapi)</h2>
+                  <h2 className="text-sm font-semibold">Credenciais do provedor</h2>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Conecte sua conta Whapi para enviar e receber mensagens.
+                    Esses campos são genéricos e funcionam para qualquer API REST com Bearer token.
                   </p>
                 </div>
                 <label className="flex items-center gap-2 text-xs">
@@ -467,30 +470,30 @@ function SettingsPanel() {
 
               <div className="space-y-4">
                 <Field
-                  label="URL da API"
+                  label="URL base da API"
                   value={integ.api_url}
                   onChange={(v) => setInteg({ ...integ, api_url: v })}
-                  placeholder="https://gate.whapi.cloud"
+                  placeholder="https://api.seu-provedor.com"
                 />
                 <Field
-                  label="Token"
+                  label="Token de autenticação (Bearer)"
                   type="password"
                   value={integ.token}
                   onChange={(v) => setInteg({ ...integ, token: v })}
-                  placeholder="Bearer token do Whapi"
+                  placeholder="Cole o token/API key do provedor"
                 />
                 <Field
-                  label="Secret do webhook"
+                  label="Segredo do webhook"
                   type="password"
                   value={integ.webhook_secret}
                   onChange={(v) => setInteg({ ...integ, webhook_secret: v })}
                   placeholder="Usado para validar requisições recebidas"
                 />
                 <Field
-                  label="Número conectado (obrigatório para receber mensagens)"
+                  label="Identificador do canal / número (opcional)"
                   value={integ.phone_number}
                   onChange={(v) => setInteg({ ...integ, phone_number: v })}
-                  placeholder="+55 11 99999-9999"
+                  placeholder="+55 11 99999-9999 ou ID do canal"
                 />
               </div>
             </section>
@@ -498,13 +501,14 @@ function SettingsPanel() {
             <section className="rounded-md border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold">URL do Webhook</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Cole esta URL completa no painel do Whapi. O workspace será identificado
-                automaticamente pelo número conectado ou pelo secret configurado acima.
+                Configure esta URL no painel do seu provedor para receber eventos. O workspace é
+                identificado pelo identificador acima ou pelo segredo do webhook.
               </p>
               <div className="mt-3 break-all rounded border border-border bg-surface-2 px-3 py-2 font-mono text-xs">
                 {webhookUrl}
               </div>
             </section>
+
 
             {feedback && (
               <div
