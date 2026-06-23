@@ -258,11 +258,13 @@ function ChannelPanel() {
   return (
     <section>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Conexão do WhatsApp</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Conexão do canal</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Gerencie o número conectado ao canal Whapi.
+          Disponível para provedores compatíveis com QR code (ex.: Whapi). Para outros provedores,
+          apenas as credenciais acima são necessárias.
         </p>
       </div>
+
 
       <div className="rounded-md border border-border bg-surface p-5 space-y-4">
         {loading && !state ? (
