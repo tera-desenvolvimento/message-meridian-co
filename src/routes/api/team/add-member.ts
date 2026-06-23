@@ -40,7 +40,7 @@ async function getCallerContext(token: string) {
     .limit(1)
     .maybeSingle();
   if (!m) return null;
-  return { userId, workspaceId: m.workspace_id, role: m.role as "ADMIN" | "AGENT" };
+  return { userId, workspaceId: m.workspace_id, role: m.role as AppRole };
 }
 
 export const Route = createFileRoute("/api/team/add-member")({
