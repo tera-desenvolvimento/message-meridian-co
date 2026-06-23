@@ -188,7 +188,7 @@ function Inbox() {
         className={`${showChatOnMobile ? "hidden" : "flex"} h-full w-full md:flex md:w-auto md:shrink-0`}
       >
         <ConversationList
-          conversations={conversations}
+          conversations={visibleConversations}
           loading={loadingConvs}
           selectedId={selectedId}
           onSelect={setSelectedId}
