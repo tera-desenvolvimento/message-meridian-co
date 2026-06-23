@@ -265,15 +265,22 @@ function ChannelPanel() {
         {loading && !state ? (
           <div className="text-sm text-muted-foreground">Consultando canal...</div>
         ) : error ? (
-          <div className="space-y-3">
-            <div className="text-sm text-destructive">{error}</div>
+          <div className="flex flex-col items-start gap-3">
+            {/Token.*[Ww]hapi.*configurad/i.test(error) ? (
+              <p className="text-sm text-muted-foreground">
+                Sua integração ainda está sendo provisionada pela equipe Dohko. Tente novamente em
+                instantes.
+              </p>
+            ) : (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
             <button
               type="button"
               onClick={fetchStatus}
               disabled={loading}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-surface-2 px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+              className="inline-flex h-10 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-60"
             >
-              Tentar novamente
+              {loading ? "Conectando..." : "Conectar WhatsApp"}
             </button>
           </div>
         ) : !state ? (
@@ -290,6 +297,7 @@ function ChannelPanel() {
               {loading ? "Conectando..." : "Conectar WhatsApp"}
             </button>
           </div>
+
         ) : connected ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
