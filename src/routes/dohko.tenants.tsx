@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Lock, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Unlock } from "lucide-react";
+import { Lock, LogOut, Plus, RefreshCw, Settings2, ShieldCheck, Trash2, Unlock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dohko/tenants")({
