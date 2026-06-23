@@ -15,7 +15,7 @@ import {
   OnConnect,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Bot, MessageSquare, ListTree, UserPlus, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Bot, MessageSquare, ListTree, UserPlus, Save, X, Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
