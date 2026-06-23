@@ -546,6 +546,9 @@ function RolesInfoCard() {
       </ul>
     </div>
   );
+}
+
+
 
 function EditSelfDialog({
   currentName,
