@@ -467,24 +467,27 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          active: boolean
           created_at: string
-          created_by: string
+          created_by: string | null
           default_bot_flow_id: string | null
           id: string
           name: string
           whatsapp_number: string | null
         }
         Insert: {
+          active?: boolean
           created_at?: string
-          created_by: string
+          created_by?: string | null
           default_bot_flow_id?: string | null
           id?: string
           name: string
           whatsapp_number?: string | null
         }
         Update: {
+          active?: boolean
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           default_bot_flow_id?: string | null
           id?: string
           name?: string

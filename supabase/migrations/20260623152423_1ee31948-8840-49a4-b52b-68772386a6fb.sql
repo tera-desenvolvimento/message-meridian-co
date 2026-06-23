@@ -1,0 +1,1 @@
+UPDATE public.memberships SET role = 'ADMIN' WHERE role = 'SUPERADMIN';

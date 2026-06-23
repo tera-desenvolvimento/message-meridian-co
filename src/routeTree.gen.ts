@@ -17,12 +17,14 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as DohkoRouteImport } from './routes/dohko'
 import { Route as ChatbotRouteImport } from './routes/chatbot'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminExportRouteImport } from './routes/admin-export'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as DohkoTenantsRouteImport } from './routes/dohko.tenants'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiWhapiStartConversationRouteImport } from './routes/api/whapi/start-conversation'
 import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
@@ -36,6 +38,10 @@ import { Route as ApiAdminExportRouteImport } from './routes/api/admin/export'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicDohkoTenantsRouteImport } from './routes/api/public/dohko/tenants'
+import { Route as ApiPublicDohkoMeRouteImport } from './routes/api/public/dohko/me'
+import { Route as ApiPublicDohkoLogoutRouteImport } from './routes/api/public/dohko/logout'
+import { Route as ApiPublicDohkoLoginRouteImport } from './routes/api/public/dohko/login'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -77,6 +83,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DohkoRoute = DohkoRouteImport.update({
+  id: '/dohko',
+  path: '/dohko',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatbotRoute = ChatbotRouteImport.update({
   id: '/chatbot',
   path: '/chatbot',
@@ -106,6 +117,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DohkoTenantsRoute = DohkoTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => DohkoRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -176,6 +192,26 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDohkoTenantsRoute = ApiPublicDohkoTenantsRouteImport.update({
+  id: '/api/public/dohko/tenants',
+  path: '/api/public/dohko/tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDohkoMeRoute = ApiPublicDohkoMeRouteImport.update({
+  id: '/api/public/dohko/me',
+  path: '/api/public/dohko/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDohkoLogoutRoute = ApiPublicDohkoLogoutRouteImport.update({
+  id: '/api/public/dohko/logout',
+  path: '/api/public/dohko/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDohkoLoginRoute = ApiPublicDohkoLoginRouteImport.update({
+  id: '/api/public/dohko/login',
+  path: '/api/public/dohko/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -183,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -191,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
@@ -202,6 +240,10 @@ export interface FileRoutesByFullPath {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
+  '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
+  '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
+  '/api/public/dohko/tenants': typeof ApiPublicDohkoTenantsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -212,6 +254,7 @@ export interface FileRoutesByTo {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -220,6 +263,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
@@ -231,6 +275,10 @@ export interface FileRoutesByTo {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
+  '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
+  '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
+  '/api/public/dohko/tenants': typeof ApiPublicDohkoTenantsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -242,6 +290,7 @@ export interface FileRoutesById {
   '/admin-export': typeof AdminExportRoute
   '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
+  '/dohko': typeof DohkoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -250,6 +299,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/dohko/tenants': typeof DohkoTenantsRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/admin/export': typeof ApiAdminExportRoute
   '/api/public/accept-invite': typeof ApiPublicAcceptInviteRoute
@@ -261,6 +311,10 @@ export interface FileRoutesById {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
+  '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
+  '/api/public/dohko/me': typeof ApiPublicDohkoMeRoute
+  '/api/public/dohko/tenants': typeof ApiPublicDohkoTenantsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -273,6 +327,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dohko'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -281,6 +336,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/unsubscribe'
+    | '/dohko/tenants'
     | '/email/unsubscribe'
     | '/api/admin/export'
     | '/api/public/accept-invite'
@@ -292,6 +348,10 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/login'
+    | '/api/public/dohko/logout'
+    | '/api/public/dohko/me'
+    | '/api/public/dohko/tenants'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -302,6 +362,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dohko'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -310,6 +371,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/unsubscribe'
+    | '/dohko/tenants'
     | '/email/unsubscribe'
     | '/api/admin/export'
     | '/api/public/accept-invite'
@@ -321,6 +383,10 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/login'
+    | '/api/public/dohko/logout'
+    | '/api/public/dohko/me'
+    | '/api/public/dohko/tenants'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -331,6 +397,7 @@ export interface FileRouteTypes {
     | '/admin-export'
     | '/ai'
     | '/chatbot'
+    | '/dohko'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -339,6 +406,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/unsubscribe'
+    | '/dohko/tenants'
     | '/email/unsubscribe'
     | '/api/admin/export'
     | '/api/public/accept-invite'
@@ -350,6 +418,10 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/dohko/login'
+    | '/api/public/dohko/logout'
+    | '/api/public/dohko/me'
+    | '/api/public/dohko/tenants'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -361,6 +433,7 @@ export interface RootRouteChildren {
   AdminExportRoute: typeof AdminExportRoute
   AiRoute: typeof AiRoute
   ChatbotRoute: typeof ChatbotRoute
+  DohkoRoute: typeof DohkoRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -380,6 +453,10 @@ export interface RootRouteChildren {
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicDohkoLoginRoute: typeof ApiPublicDohkoLoginRoute
+  ApiPublicDohkoLogoutRoute: typeof ApiPublicDohkoLogoutRoute
+  ApiPublicDohkoMeRoute: typeof ApiPublicDohkoMeRoute
+  ApiPublicDohkoTenantsRoute: typeof ApiPublicDohkoTenantsRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -443,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dohko': {
+      id: '/dohko'
+      path: '/dohko'
+      fullPath: '/dohko'
+      preLoaderRoute: typeof DohkoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chatbot': {
       id: '/chatbot'
       path: '/chatbot'
@@ -484,6 +568,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dohko/tenants': {
+      id: '/dohko/tenants'
+      path: '/tenants'
+      fullPath: '/dohko/tenants'
+      preLoaderRoute: typeof DohkoTenantsRouteImport
+      parentRoute: typeof DohkoRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -576,8 +667,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dohko/tenants': {
+      id: '/api/public/dohko/tenants'
+      path: '/api/public/dohko/tenants'
+      fullPath: '/api/public/dohko/tenants'
+      preLoaderRoute: typeof ApiPublicDohkoTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/dohko/me': {
+      id: '/api/public/dohko/me'
+      path: '/api/public/dohko/me'
+      fullPath: '/api/public/dohko/me'
+      preLoaderRoute: typeof ApiPublicDohkoMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/dohko/logout': {
+      id: '/api/public/dohko/logout'
+      path: '/api/public/dohko/logout'
+      fullPath: '/api/public/dohko/logout'
+      preLoaderRoute: typeof ApiPublicDohkoLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/dohko/login': {
+      id: '/api/public/dohko/login'
+      path: '/api/public/dohko/login'
+      fullPath: '/api/public/dohko/login'
+      preLoaderRoute: typeof ApiPublicDohkoLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface DohkoRouteChildren {
+  DohkoTenantsRoute: typeof DohkoTenantsRoute
+}
+
+const DohkoRouteChildren: DohkoRouteChildren = {
+  DohkoTenantsRoute: DohkoTenantsRoute,
+}
+
+const DohkoRouteWithChildren = DohkoRoute._addFileChildren(DohkoRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -585,6 +714,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminExportRoute: AdminExportRoute,
   AiRoute: AiRoute,
   ChatbotRoute: ChatbotRoute,
+  DohkoRoute: DohkoRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
@@ -604,6 +734,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicDohkoLoginRoute: ApiPublicDohkoLoginRoute,
+  ApiPublicDohkoLogoutRoute: ApiPublicDohkoLogoutRoute,
+  ApiPublicDohkoMeRoute: ApiPublicDohkoMeRoute,
+  ApiPublicDohkoTenantsRoute: ApiPublicDohkoTenantsRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
