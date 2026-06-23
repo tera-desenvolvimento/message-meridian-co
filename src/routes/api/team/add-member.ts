@@ -72,15 +72,13 @@ export const Route = createFileRoute("/api/team/add-member")({
         }
 
         const email = (body.email ?? "").trim().toLowerCase();
-        const allowedRoles = ["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as const;
+        // SUPERADMIN não é mais atribuível em workspace (ele virou o operador Dohko,
+        // autenticado em /dohko via código + senha). Apenas ADMIN/SUPERVISOR/AGENT.
+        const allowedRoles = ["ADMIN", "SUPERVISOR", "AGENT"] as const;
         const requested = (body.role ?? "AGENT") as (typeof allowedRoles)[number];
-        let role: (typeof allowedRoles)[number] = allowedRoles.includes(requested)
+        const role: (typeof allowedRoles)[number] = allowedRoles.includes(requested)
           ? requested
           : "AGENT";
-        // Apenas SUPERADMIN pode promover outro SUPERADMIN.
-        if (role === "SUPERADMIN" && ctx.role !== "SUPERADMIN") {
-          role = "ADMIN";
-        }
 
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return Response.json({ error: "Informe um e-mail válido." }, { status: 400 });

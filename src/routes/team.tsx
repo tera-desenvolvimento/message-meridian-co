@@ -368,13 +368,11 @@ function MemberRow({
       <td className="px-4 py-3">
         <span
           className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-            member.role === "SUPERADMIN"
-              ? "border border-destructive/30 bg-destructive/10 text-destructive"
-              : member.role === "ADMIN"
-                ? "border border-primary/30 bg-primary/10 text-primary"
-                : member.role === "SUPERVISOR"
-                  ? "border border-warning/30 bg-warning/10 text-warning"
-                  : "border border-border bg-surface-2 text-muted-foreground"
+            member.role === "ADMIN" || member.role === "SUPERADMIN"
+              ? "border border-primary/30 bg-primary/10 text-primary"
+              : member.role === "SUPERVISOR"
+                ? "border border-warning/30 bg-warning/10 text-warning"
+                : "border border-border bg-surface-2 text-muted-foreground"
           }`}
         >
           {ROLE_LABELS[member.role]}
@@ -537,7 +535,7 @@ function RolesInfoCard() {
         Níveis de acesso
       </div>
       <ul className="space-y-1.5 text-xs text-muted-foreground">
-        {(["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as UserRole[]).map((r) => (
+        {(["ADMIN", "SUPERVISOR", "AGENT"] as UserRole[]).map((r) => (
           <li key={r}>
             <span className="font-medium text-foreground">{ROLE_LABELS[r]}:</span>{" "}
             {ROLE_DESCRIPTIONS[r]}

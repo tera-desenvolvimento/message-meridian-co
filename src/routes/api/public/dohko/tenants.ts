@@ -69,7 +69,8 @@ export const Route = createFileRoute("/api/public/dohko/tenants")({
         }
         const { data, error } = await supabaseAdmin
           .from("workspaces")
-          .insert({ name, active: true })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert({ name, active: true, created_by: null } as any)
           .select("id, name, active, created_at")
           .single();
         if (error) return Response.json({ error: error.message }, { status: 500 });

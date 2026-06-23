@@ -66,7 +66,7 @@ export async function verifyDohkoToken(token: string | null | undefined): Promis
     const ok = await crypto.subtle.verify(
       "HMAC",
       key,
-      b64urlDecode(s),
+      b64urlDecode(s) as unknown as BufferSource,
       enc.encode(`${h}.${b}`),
     );
     if (!ok) return null;
