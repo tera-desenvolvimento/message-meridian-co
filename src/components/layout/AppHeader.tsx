@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bot, Inbox, LogOut, Moon, Settings as SettingsIcon, Sun, Users } from "lucide-react";
+import { Bot, Inbox, LogOut, Moon, Settings as SettingsIcon, Sparkles, Sun, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
@@ -18,13 +18,14 @@ export function AppHeader() {
   const path = location.pathname;
 
   const items: {
-    to: "/" | "/team" | "/chatbot" | "/settings";
+    to: "/" | "/team" | "/chatbot" | "/ai" | "/settings";
     label: string;
     icon: typeof Inbox;
   }[] = [
     { to: "/", label: "Caixa de entrada", icon: Inbox },
     { to: "/team", label: "Equipe", icon: Users },
     { to: "/chatbot", label: "Chatbot", icon: Bot },
+    { to: "/ai", label: "IA", icon: Sparkles },
     { to: "/settings", label: "Configurações", icon: SettingsIcon },
   ];
 
