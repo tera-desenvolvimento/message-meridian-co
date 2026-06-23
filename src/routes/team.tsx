@@ -530,6 +530,23 @@ function EditMemberDialog({
   );
 }
 
+function RolesInfoCard() {
+  return (
+    <div className="mb-4 rounded-md border border-border bg-surface p-4">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Níveis de acesso
+      </div>
+      <ul className="space-y-1.5 text-xs text-muted-foreground">
+        {(["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as UserRole[]).map((r) => (
+          <li key={r}>
+            <span className="font-medium text-foreground">{ROLE_LABELS[r]}:</span>{" "}
+            {ROLE_DESCRIPTIONS[r]}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
 function EditSelfDialog({
   currentName,
   onClose,
