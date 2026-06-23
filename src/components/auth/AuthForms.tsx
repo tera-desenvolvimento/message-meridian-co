@@ -83,10 +83,25 @@ export function ErrorBox({ message }: { message: string | null }) {
   );
 }
 
+function isDohkoOperatorCode(value: string): boolean {
+  return value.trim().toLowerCase() === "dohkochatadmin";
+}
+
+async function loginDohkoOperator(code: string, password: string): Promise<void> {
+  const res = await fetch("/api/public/dohko/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ code, password }),
+  });
+  const json = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(json.error ?? "Falha ao entrar como operador Dohko");
+}
+
 export function LoginForm() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -96,7 +111,13 @@ export function LoginForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
+      const cleanIdentifier = identifier.trim();
+      if (isDohkoOperatorCode(cleanIdentifier)) {
+        await loginDohkoOperator(cleanIdentifier, password);
+        navigate({ to: "/dohko/tenants" });
+        return;
+      }
+      await login(cleanIdentifier, password);
       navigate({ to: "/" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao entrar");
@@ -109,12 +130,12 @@ export function LoginForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <ErrorBox message={error} />
       <Field
-        label="E-mail"
-        type="email"
-        autoComplete="email"
+        label="E-mail ou código Dohko"
+        type="text"
+        autoComplete="username"
         required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
         disabled={submitting}
       />
       <Field
