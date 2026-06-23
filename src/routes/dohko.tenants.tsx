@@ -34,6 +34,7 @@ interface TenantTableProps {
   onToggleTenant: (tenant: Tenant) => void;
   onToggleUser: (user: TenantUser) => void;
   onRemove: (tenant: Tenant) => void;
+  onEditIntegration: (tenant: Tenant) => void;
 }
 
 function StatusBadge({ active }: { active: boolean }) {
