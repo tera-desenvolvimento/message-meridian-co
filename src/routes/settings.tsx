@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { canManageIntegrations } from "@/lib/permissions";
 import { api } from "@/lib/http";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
