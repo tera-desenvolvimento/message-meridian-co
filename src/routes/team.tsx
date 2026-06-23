@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { TeamMember, UserRole } from "@/lib/types";
+import {
+  ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
+  assignableRoles,
+  canManageTeam,
+} from "@/lib/permissions";
 
 export const Route = createFileRoute("/team")({
   head: () => ({ meta: [{ title: "Equipe — Dohkochat" }] }),
