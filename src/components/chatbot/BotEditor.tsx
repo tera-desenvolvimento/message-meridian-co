@@ -243,6 +243,9 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
           <Button variant="outline" size="sm" onClick={() => addNode('transfer')} className="gap-2">
             <Plus className="h-3.5 w-3.5" /> Bloco de Transbordo
           </Button>
+          <Button variant="outline" size="sm" onClick={() => addNode('ai')} className="gap-2">
+            <Sparkles className="h-3.5 w-3.5" /> Bloco de IA
+          </Button>
           <Button onClick={handleSave} disabled={saving} className="ml-4 gap-2">
             <Save className="h-4 w-4" />
             {saving ? 'Salvando...' : 'Salvar Fluxo'}
