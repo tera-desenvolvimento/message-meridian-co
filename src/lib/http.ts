@@ -375,7 +375,7 @@ export const api = {
 
     const { data: ws, error: selectError } = await supabase
       .from("workspaces")
-      .select("id, name, created_at")
+      .select("id, name, created_at, trial_ends_at, subscription_active")
       .eq("id", workspaceId)
       .single();
 
@@ -383,7 +383,13 @@ export const api = {
       throw new Error("Workspace criado, mas não foi possível carregar os dados. Recarregue a página.");
     }
 
-    return { id: ws.id, name: ws.name, createdAt: ws.created_at };
+    return {
+      id: ws.id,
+      name: ws.name,
+      createdAt: ws.created_at,
+      trialEndsAt: (ws as any).trial_ends_at,
+      subscriptionActive: (ws as any).subscription_active ?? false,
+    };
   },
 
   // ---------- Team ----------
