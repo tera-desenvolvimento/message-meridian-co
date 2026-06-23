@@ -13,9 +13,11 @@ import type { Database } from "@/integrations/supabase/types";
  * Auth: caller must be ADMIN of the workspace.
  */
 
+type AppRole = "SUPERADMIN" | "ADMIN" | "SUPERVISOR" | "AGENT";
+
 interface Body {
   email?: string;
-  role?: "ADMIN" | "AGENT";
+  role?: AppRole;
 }
 
 async function getCallerContext(token: string) {
