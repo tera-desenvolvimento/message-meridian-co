@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/team/add-member")({
         if (!ctx) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
-        if (ctx.role !== "ADMIN") {
+        if (ctx.role !== "ADMIN" && ctx.role !== "SUPERADMIN") {
           return Response.json(
             { error: "Apenas administradores podem adicionar membros." },
             { status: 403 },
@@ -70,7 +70,15 @@ export const Route = createFileRoute("/api/team/add-member")({
         }
 
         const email = (body.email ?? "").trim().toLowerCase();
-        const role = body.role === "ADMIN" ? "ADMIN" : "AGENT";
+        const allowedRoles = ["SUPERADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as const;
+        const requested = (body.role ?? "AGENT") as (typeof allowedRoles)[number];
+        let role: (typeof allowedRoles)[number] = allowedRoles.includes(requested)
+          ? requested
+          : "AGENT";
+        // Apenas SUPERADMIN pode promover outro SUPERADMIN.
+        if (role === "SUPERADMIN" && ctx.role !== "SUPERADMIN") {
+          role = "ADMIN";
+        }
 
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return Response.json({ error: "Informe um e-mail válido." }, { status: 400 });
