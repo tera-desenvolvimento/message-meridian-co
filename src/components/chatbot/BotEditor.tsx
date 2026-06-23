@@ -182,17 +182,23 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
     setSaving(false);
   };
 
-  const addNode = (type: 'message' | 'choice' | 'transfer') => {
+  const addNode = (type: 'message' | 'choice' | 'transfer' | 'ai') => {
     const id = `${type}-${Date.now()}`;
+    const defaults: Record<string, any> = {
+      message: { content: 'Olá, como posso ajudar?' },
+      choice: { content: 'Escolha uma opção:', options: [{ label: 'Opção 1' }] },
+      transfer: { content: 'Transferindo para um atendente...' },
+      ai: {
+        content: 'Aguarde, estou pensando...',
+        system_prompt:
+          'Você é um assistente de atendimento. Responda de forma clara, breve e cordial em português.',
+      },
+    };
     const newNode: Node = {
       id,
       type,
       position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { 
-        name: `Novo ${type}`,
-        content: type === 'transfer' ? 'Transferindo...' : 'Olá, como posso ajudar?',
-        ...(type === 'choice' ? { options: [{ label: 'Opção 1' }] } : {})
-      },
+      data: { name: `Novo ${type}`, ...defaults[type] },
     };
     setNodes((nds) => [...nds, newNode]);
   };
