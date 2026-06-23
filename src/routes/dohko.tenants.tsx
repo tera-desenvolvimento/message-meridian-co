@@ -401,6 +401,7 @@ function DohkoTenants() {
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [integrationTenant, setIntegrationTenant] = useState<Tenant | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
