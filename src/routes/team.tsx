@@ -368,12 +368,16 @@ function MemberRow({
       <td className="px-4 py-3">
         <span
           className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-            member.role === "ADMIN"
-              ? "border border-primary/30 bg-primary/10 text-primary"
-              : "border border-border bg-surface-2 text-muted-foreground"
+            member.role === "SUPERADMIN"
+              ? "border border-destructive/30 bg-destructive/10 text-destructive"
+              : member.role === "ADMIN"
+                ? "border border-primary/30 bg-primary/10 text-primary"
+                : member.role === "SUPERVISOR"
+                  ? "border border-warning/30 bg-warning/10 text-warning"
+                  : "border border-border bg-surface-2 text-muted-foreground"
           }`}
         >
-          {member.role === "ADMIN" ? "Admin" : "Agente"}
+          {ROLE_LABELS[member.role]}
         </span>
       </td>
       <td className="px-4 py-3">
