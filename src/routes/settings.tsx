@@ -172,7 +172,180 @@ function AccountSection() {
 }
 
 function IntegrationSection() {
-  return <SettingsPanel />;
+  return (
+    <>
+      <SettingsPanel />
+      <ChannelPanel />
+    </>
+  );
+}
+
+function ChannelPanel() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+  const [state, setState] = useState<{
+    status: string;
+    phone: string | null;
+    name: string | null;
+    qrImage: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+      const res = await fetch("/api/whapi/channel", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Erro ao consultar status");
+      setState(body);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void fetchStatus();
+  }, [isAdmin, fetchStatus]);
+
+  // Poll while waiting for QR scan
+  useEffect(() => {
+    if (!state || !isAdmin) return;
+    const isConnected = ["AUTH", "ACTIVE", "CONNECTED"].includes(state.status.toUpperCase());
+    if (isConnected) return;
+    const id = setInterval(fetchStatus, 5000);
+    return () => clearInterval(id);
+  }, [state, isAdmin, fetchStatus]);
+
+  async function disconnect() {
+    if (!confirm("Desconectar o número atual do WhatsApp?")) return;
+    setDisconnecting(true);
+    setError(null);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+      const res = await fetch("/api/whapi/channel", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Erro ao desconectar");
+      await fetchStatus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!isAdmin) return null;
+
+  const connected = state && ["AUTH", "ACTIVE", "CONNECTED"].includes(state.status.toUpperCase());
+
+  return (
+    <section>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight">Conexão do WhatsApp</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Gerencie o número conectado ao canal Whapi.
+        </p>
+      </div>
+
+      <div className="rounded-md border border-border bg-surface p-5 space-y-4">
+        {loading && !state ? (
+          <div className="text-sm text-muted-foreground">Consultando canal...</div>
+        ) : error ? (
+          <div className="text-sm text-destructive">{error}</div>
+        ) : !state ? null : connected ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-success" />
+              <span className="text-sm font-medium">Conectado</span>
+            </div>
+            <div className="space-y-1 text-sm">
+              {state.name && (
+                <div>
+                  <span className="text-muted-foreground">Nome:</span>{" "}
+                  <span className="font-medium">{state.name}</span>
+                </div>
+              )}
+              {state.phone && (
+                <div>
+                  <span className="text-muted-foreground">Número:</span>{" "}
+                  <span className="font-mono">{state.phone}</span>
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground">Status: {state.status}</div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={fetchStatus}
+                disabled={loading}
+                className="inline-flex h-9 items-center rounded-md border border-border bg-surface-2 px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+              >
+                Atualizar
+              </button>
+              <button
+                type="button"
+                onClick={disconnect}
+                disabled={disconnecting}
+                className="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {disconnecting ? "Desconectando..." : "Desconectar número"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-warning" />
+              <span className="text-sm font-medium">Aguardando conexão</span>
+              <span className="text-xs text-muted-foreground">({state.status})</span>
+            </div>
+            {state.qrImage ? (
+              <div className="flex flex-col items-center gap-3">
+                <img
+                  src={state.qrImage}
+                  alt="QR Code Whapi"
+                  className="h-64 w-64 rounded-md border border-border bg-white p-2"
+                />
+                <p className="max-w-xs text-center text-xs text-muted-foreground">
+                  Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho e
+                  escaneie o código acima.
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                QR ainda não disponível. Verifique o token na seção acima.
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={fetchStatus}
+              disabled={loading}
+              className="inline-flex h-9 items-center rounded-md border border-border bg-surface-2 px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+            >
+              {loading ? "Atualizando..." : "Atualizar QR"}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 function SettingsPanel() {
