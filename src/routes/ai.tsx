@@ -49,7 +49,7 @@ function AiSettingsPage() {
 
 function AiSection() {
   const { user, workspace } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageIntegrations(user?.role);
   const [cfg, setCfg] = useState<AiConfig>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

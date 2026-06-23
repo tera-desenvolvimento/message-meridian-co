@@ -182,7 +182,7 @@ function IntegrationSection() {
 
 function ChannelPanel() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageIntegrations(user?.role);
   const [state, setState] = useState<{
     status: string;
     phone: string | null;
@@ -352,7 +352,7 @@ function ChannelPanel() {
 
 function SettingsPanel() {
   const { user, workspace } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = canManageIntegrations(user?.role);
   const [integ, setInteg] = useState<Integration>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
