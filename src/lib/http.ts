@@ -655,6 +655,8 @@ export const api = {
       id: json.workspace.id,
       name: json.workspace.name,
       createdAt: json.workspace.createdAt,
+      trialEndsAt: json.workspace.trialEndsAt ?? new Date().toISOString(),
+      subscriptionActive: json.workspace.subscriptionActive ?? false,
     };
   },
 
