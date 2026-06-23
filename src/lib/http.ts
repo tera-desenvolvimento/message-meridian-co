@@ -338,12 +338,18 @@ export const api = {
     if (!m) return null;
     const { data, error } = await supabase
       .from("workspaces")
-      .select("id, name, created_at")
+      .select("id, name, created_at, trial_ends_at, subscription_active")
       .eq("id", m.workspace_id)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    return { id: data.id, name: data.name, createdAt: data.created_at };
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at,
+      trialEndsAt: (data as any).trial_ends_at,
+      subscriptionActive: (data as any).subscription_active ?? false,
+    };
   },
 
   async createWorkspace(name: string): Promise<Workspace> {
