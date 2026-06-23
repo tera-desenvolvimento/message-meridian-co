@@ -473,6 +473,8 @@ export type Database = {
           default_bot_flow_id: string | null
           id: string
           name: string
+          subscription_active: boolean
+          trial_ends_at: string
           whatsapp_number: string | null
         }
         Insert: {
@@ -482,6 +484,8 @@ export type Database = {
           default_bot_flow_id?: string | null
           id?: string
           name: string
+          subscription_active?: boolean
+          trial_ends_at?: string
           whatsapp_number?: string | null
         }
         Update: {
@@ -491,6 +495,8 @@ export type Database = {
           default_bot_flow_id?: string | null
           id?: string
           name?: string
+          subscription_active?: boolean
+          trial_ends_at?: string
           whatsapp_number?: string | null
         }
         Relationships: [
