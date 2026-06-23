@@ -152,6 +152,7 @@ function TeamPanel() {
       {editing && (
         <EditMemberDialog
           member={editing}
+          myRole={myRole}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
