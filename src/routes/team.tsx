@@ -422,10 +422,12 @@ function MemberRow({
 
 function EditMemberDialog({
   member,
+  myRole,
   onClose,
   onSaved,
 }: {
   member: TeamMember;
+  myRole: UserRole | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
