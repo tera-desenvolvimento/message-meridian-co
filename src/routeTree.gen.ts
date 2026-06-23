@@ -18,6 +18,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ChatbotRouteImport } from './routes/chatbot'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminExportRouteImport } from './routes/admin-export'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
@@ -78,6 +79,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const ChatbotRoute = ChatbotRouteImport.update({
   id: '/chatbot',
   path: '/chatbot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminExportRoute = AdminExportRouteImport.update({
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/admin-export': typeof AdminExportRoute
+  '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/admin-export': typeof AdminExportRoute
+  '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/admin-export': typeof AdminExportRoute
+  '/ai': typeof AiRoute
   '/chatbot': typeof ChatbotRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invite'
     | '/admin-export'
+    | '/ai'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invite'
     | '/admin-export'
+    | '/ai'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invite'
     | '/admin-export'
+    | '/ai'
     | '/chatbot'
     | '/forgot-password'
     | '/login'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
   AdminExportRoute: typeof AdminExportRoute
+  AiRoute: typeof AiRoute
   ChatbotRoute: typeof ChatbotRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       path: '/chatbot'
       fullPath: '/chatbot'
       preLoaderRoute: typeof ChatbotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-export': {
@@ -543,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcceptInviteRoute: AcceptInviteRoute,
   AdminExportRoute: AdminExportRoute,
+  AiRoute: AiRoute,
   ChatbotRoute: ChatbotRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
