@@ -72,16 +72,6 @@ const ChoiceNode = ({ data, selected, type }: NodeProps) => (
           />
         </div>
       ))}
-      <div className="relative rounded bg-amber-500/10 px-2 py-1 text-amber-400">
-        Esgotou
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="exhaust"
-          style={{ top: '50%' }}
-          className="!h-2 !w-2 !bg-amber-400 !border-0"
-        />
-      </div>
     </div>
   </BaseNode>
 );
@@ -583,6 +573,47 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                       <option value="end">Encerrar (abandono)</option>
                     </select>
                   </div>
+                  {(() => {
+                    const exhaustEdge = edges.find(
+                      (e) => e.source === selectedNode.id && e.sourceHandle === 'exhaust',
+                    );
+                    return (
+                      <div className="space-y-2">
+                        <Label>Conectar "esgotou" a um bloco (opcional)</Label>
+                        <select
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={exhaustEdge?.target ?? ''}
+                          onChange={(e) => {
+                            const targetId = e.target.value;
+                            setEdges((eds) => {
+                              const filtered = eds.filter(
+                                (ed) => !(ed.source === selectedNode.id && ed.sourceHandle === 'exhaust'),
+                              );
+                              if (!targetId) return filtered;
+                              return [
+                                ...filtered,
+                                {
+                                  id: `${selectedNode.id}-exhaust-${targetId}`,
+                                  source: selectedNode.id,
+                                  sourceHandle: 'exhaust',
+                                  target: targetId,
+                                } as Edge,
+                              ];
+                            });
+                          }}
+                        >
+                          <option value="">— Nenhum (usar ação acima) —</option>
+                          {nodes
+                            .filter((n) => n.id !== selectedNode.id)
+                            .map((n) => (
+                              <option key={n.id} value={n.id}>
+                                {((n.data as any).name as string) || `${n.type} (${n.id.slice(0, 6)})`}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
 
