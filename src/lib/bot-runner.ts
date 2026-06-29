@@ -141,9 +141,21 @@ async function executeBlock(
   try {
     if (block.type === "ai") {
       await runAiBlock(conv, block, "");
-    } else if (block.content && conv.workspace_id && conv.external_id) {
-      await sendBotResponse(conv.workspace_id, conv.external_id, block.content);
+    } else if (conv.workspace_id && conv.external_id) {
+      if (block.media_url && block.media_type && block.media_type !== "none") {
+        await sendBotMedia(
+          conv.workspace_id,
+          conv.external_id,
+          block.media_type,
+          block.media_url,
+          block.content || "",
+          block.media_filename,
+        );
+      } else if (block.content) {
+        await sendBotResponse(conv.workspace_id, conv.external_id, block.content);
+      }
     }
+
 
     if (block.type === "timeout" || block.type === "choice") {
       // Marca momento da cutucada inicial / pergunta pendente
