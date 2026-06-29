@@ -503,13 +503,12 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <Label className="text-[10px] text-muted-foreground">Se</Label>
-                              <select
-                                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
-                                value={opt.source ?? 'user_reply'}
-                                onChange={(e) => updateOpt({ source: e.target.value })}
+                              <div
+                                className="w-full rounded-md border border-input bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground cursor-not-allowed select-none"
+                                title="Fonte fixa: resposta do usuário"
                               >
-                                <option value="user_reply">Resposta do usuário</option>
-                              </select>
+                                Resposta do usuário
+                              </div>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-[10px] text-muted-foreground">Condição</Label>
