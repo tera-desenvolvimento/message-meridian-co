@@ -444,28 +444,75 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                 <>
                   <div className="space-y-3">
                     <Label>Opções (Palavras-chave)</Label>
-                    {(selectedNode.data as any).options?.map((opt: any, i: number) => (
-                      <div key={i} className="flex gap-2">
-                        <Input
-                          value={opt.label}
-                          onChange={(e) => {
-                            const newOpts = [...(selectedNode.data as any).options];
-                            newOpts[i].label = e.target.value;
-                            updateNodeData(selectedNode.id, { options: newOpts });
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newOpts = (selectedNode.data as any).options.filter((_: any, idx: number) => idx !== i);
-                            updateNodeData(selectedNode.id, { options: newOpts });
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                    {(selectedNode.data as any).options?.map((opt: any, i: number) => {
+                      const handleId = `opt-${i}`;
+                      const currentEdge = edges.find(
+                        (e) => e.source === selectedNode.id && e.sourceHandle === handleId,
+                      );
+                      return (
+                        <div key={i} className="space-y-1 rounded-md border bg-muted/20 p-2">
+                          <div className="flex gap-2">
+                            <Input
+                              value={opt.label}
+                              onChange={(e) => {
+                                const newOpts = [...(selectedNode.data as any).options];
+                                newOpts[i].label = e.target.value;
+                                updateNodeData(selectedNode.id, { options: newOpts });
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newOpts = (selectedNode.data as any).options.filter(
+                                  (_: any, idx: number) => idx !== i,
+                                );
+                                updateNodeData(selectedNode.id, { options: newOpts });
+                                setEdges((eds) =>
+                                  eds.filter(
+                                    (e) => !(e.source === selectedNode.id && e.sourceHandle === handleId),
+                                  ),
+                                );
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <select
+                            className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+                            value={currentEdge?.target ?? ''}
+                            onChange={(e) => {
+                              const targetId = e.target.value;
+                              setEdges((eds) => {
+                                const filtered = eds.filter(
+                                  (ed) => !(ed.source === selectedNode.id && ed.sourceHandle === handleId),
+                                );
+                                if (!targetId) return filtered;
+                                return [
+                                  ...filtered,
+                                  {
+                                    id: `${selectedNode.id}-${handleId}-${targetId}`,
+                                    source: selectedNode.id,
+                                    sourceHandle: handleId,
+                                    target: targetId,
+                                  } as Edge,
+                                ];
+                              });
+                            }}
+                          >
+                            <option value="">— Conectar a um bloco —</option>
+                            {nodes
+                              .filter((n) => n.id !== selectedNode.id)
+                              .map((n) => (
+                                <option key={n.id} value={n.id}>
+                                  {((n.data as any).name as string) ||
+                                    `${n.type} (${n.id.slice(0, 6)})`}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                     <Button
                       variant="outline"
                       size="sm"
