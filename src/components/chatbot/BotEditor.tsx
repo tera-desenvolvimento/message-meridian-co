@@ -336,8 +336,7 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
             <Sparkles className="h-3.5 w-3.5" /> IA
           </Button>
         </aside>
-        <div className="flex-1 relative">
-
+        <div className="flex-1 relative bg-zinc-950">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -347,13 +346,30 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
             nodeTypes={nodeTypes}
             onNodeClick={(_, node) => setSelectedNodeId(node.id)}
             onPaneClick={() => setSelectedNodeId(null)}
+            defaultEdgeOptions={{
+              animated: false,
+              style: { stroke: '#71717a', strokeWidth: 1.5 },
+            }}
             fitView
           >
-            <Background />
-            <Controls />
-            <MiniMap />
+            <Background color="#3f3f46" gap={20} size={1} />
+            <Controls className="!bg-zinc-900 !border-zinc-700 [&_button]:!bg-zinc-900 [&_button]:!border-zinc-700 [&_button]:!text-zinc-300" />
+            <MiniMap
+              maskColor="rgba(9,9,11,0.7)"
+              style={{ background: '#18181b', border: '1px solid #3f3f46' }}
+              nodeColor={(n) =>
+                ({
+                  message: '#0284c7',
+                  choice: '#7c3aed',
+                  timeout: '#d97706',
+                  transfer: '#059669',
+                  ai: '#c026d3',
+                } as any)[n.type as string] || '#52525b'
+              }
+            />
           </ReactFlow>
         </div>
+
 
         {selectedNode && (
           <aside className="w-80 border-l bg-surface p-6 overflow-y-auto">
