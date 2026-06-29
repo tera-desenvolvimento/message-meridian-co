@@ -198,6 +198,20 @@ function DashboardContent() {
         })}
       </div>
 
+      <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-4">
+        <div className="rounded-md bg-rose-500/10 p-2 text-rose-500">
+          <TrendingDown className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-medium">Abandonos do bot (últimos 7 dias)</div>
+          <div className="text-xs text-muted-foreground">
+            Conversas que esgotaram tentativas em blocos de tempo / decisão.
+          </div>
+        </div>
+        <div className="text-3xl font-bold tabular-nums">{abandon7d}</div>
+      </div>
+
+
       <div className="rounded-lg border border-border bg-card">
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold">{current.label}</h2>
