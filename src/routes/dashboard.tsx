@@ -56,6 +56,13 @@ function DashboardContent() {
     try {
       const list = await api.listConversations();
       setConversations(list);
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("bot_abandonment_stats")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", user!.workspaceId!)
+        .gte("abandoned_at", since);
+      setAbandon7d(count ?? 0);
     } catch (e) {
       console.error("Failed to load conversations", e);
     } finally {
