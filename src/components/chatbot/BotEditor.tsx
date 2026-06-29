@@ -23,108 +23,113 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// --- Custom Nodes ---
+// --- Custom Nodes (Blip-style) ---
 
-const BaseNode = ({ title, icon: Icon, children, selected, onEdit }: any) => (
-  <div className={`min-w-[200px] rounded-lg border bg-background shadow-md transition-all ${selected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-    <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-2">
-      <div className="rounded bg-primary/10 p-1 text-primary">
-        <Icon className="h-3.5 w-3.5" />
-      </div>
-      <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
-      {onEdit && <button onClick={onEdit} className="ml-auto text-[10px] text-muted-foreground hover:text-primary">Editar</button>}
+const ACCENTS: Record<string, string> = {
+  message: 'bg-sky-600',
+  choice: 'bg-violet-600',
+  timeout: 'bg-amber-600',
+  transfer: 'bg-emerald-600',
+  ai: 'bg-fuchsia-600',
+};
+
+const BaseNode = ({ title, accent, selected, children, footer }: any) => (
+  <div
+    className={`min-w-[170px] overflow-hidden rounded-md border shadow-lg transition-all ${
+      selected ? 'border-primary ring-2 ring-primary/40' : 'border-zinc-700'
+    } bg-zinc-800`}
+  >
+    <div className={`px-3 py-2 text-center text-[11px] font-semibold text-white ${accent}`}>
+      {title}
     </div>
-    <div className="p-3">
-      {children}
-    </div>
+    {children && <div className="px-3 py-2 text-[10px] text-zinc-300">{children}</div>}
+    {footer}
   </div>
 );
 
-const MessageNode = ({ data, selected }: NodeProps) => (
-  <BaseNode title="Mensagem" icon={MessageSquare} selected={selected}>
-    <Handle type="target" position={Position.Top} className="!bg-primary" />
-    <p className="line-clamp-3 text-xs text-muted-foreground">{data.content as string || 'Sem mensagem configurada'}</p>
-    <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+const MessageNode = ({ data, selected, type }: NodeProps) => (
+  <BaseNode title={(data.name as string) || 'Mensagem'} accent={ACCENTS[type]} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
+    <p className="line-clamp-2 text-zinc-400">{(data.content as string) || 'Sem mensagem'}</p>
+    <Handle type="source" position={Position.Bottom} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
   </BaseNode>
 );
 
-const ChoiceNode = ({ data, selected }: NodeProps) => (
-  <BaseNode title="Decisão" icon={ListTree} selected={selected}>
-    <Handle type="target" position={Position.Top} className="!bg-primary" />
-    <p className="mb-2 line-clamp-2 text-[10px] text-muted-foreground font-medium">{data.content as string}</p>
+const ChoiceNode = ({ data, selected, type }: NodeProps) => (
+  <BaseNode title={(data.name as string) || 'Decisão'} accent={ACCENTS[type]} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
+    <p className="mb-1 line-clamp-2 text-zinc-400">{(data.content as string) || 'Pergunta'}</p>
     <div className="space-y-1">
       {(data.options as any[])?.map((opt, i) => (
-        <div key={i} className="relative flex items-center justify-between rounded bg-muted/50 px-2 py-1 text-[10px]">
-          <span>{opt.label}</span>
+        <div key={i} className="relative rounded bg-zinc-900/70 px-2 py-1 text-zinc-200">
+          {opt.label}
           <Handle
             type="source"
             position={Position.Right}
             id={`opt-${i}`}
-            style={{ top: '50%', right: '-8px' }}
-            className="!bg-primary"
+            style={{ top: '50%' }}
+            className="!h-2 !w-2 !bg-violet-400 !border-0"
           />
         </div>
       ))}
-      <div className="relative mt-2 flex items-center justify-between rounded bg-amber-500/10 px-2 py-1 text-[10px] text-amber-600">
-        <span>Esgotou tentativas</span>
+      <div className="relative rounded bg-amber-500/10 px-2 py-1 text-amber-400">
+        Esgotou
         <Handle
           type="source"
           position={Position.Right}
           id="exhaust"
-          style={{ top: '50%', right: '-8px' }}
-          className="!bg-amber-500"
+          style={{ top: '50%' }}
+          className="!h-2 !w-2 !bg-amber-400 !border-0"
         />
       </div>
     </div>
   </BaseNode>
 );
 
-const TransferNode = ({ data, selected }: NodeProps) => (
-  <BaseNode title="Transbordo" icon={UserPlus} selected={selected}>
-    <Handle type="target" position={Position.Top} className="!bg-primary" />
-    <div className="flex items-center gap-2 rounded bg-success/10 px-2 py-1 text-[10px] text-success">
-      <Bot className="h-3 w-3" />
-      <span>Atendimento Humano</span>
+const TransferNode = ({ data, selected, type }: NodeProps) => (
+  <BaseNode title={(data.name as string) || 'Transbordo'} accent={ACCENTS[type]} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
+    <div className="flex items-center gap-1.5 text-zinc-300">
+      <UserPlus className="h-3 w-3" /> Atendimento humano
     </div>
   </BaseNode>
 );
 
-const AiNode = ({ data, selected }: NodeProps) => (
-  <BaseNode title="IA" icon={Sparkles} selected={selected}>
-    <Handle type="target" position={Position.Top} className="!bg-primary" />
-    <p className="line-clamp-3 text-xs text-muted-foreground">
-      {(data.system_prompt as string) || (data.content as string) || 'Configure o prompt do sistema'}
+const AiNode = ({ data, selected, type }: NodeProps) => (
+  <BaseNode title={(data.name as string) || 'IA'} accent={ACCENTS[type]} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
+    <p className="line-clamp-2 text-zinc-400">
+      {(data.system_prompt as string) || 'Configure o prompt'}
     </p>
-    <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+    <Handle type="source" position={Position.Bottom} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
   </BaseNode>
 );
 
-const TimeoutNode = ({ data, selected }: NodeProps) => (
-  <BaseNode title="Tempo de espera" icon={Clock} selected={selected}>
-    <Handle type="target" position={Position.Top} className="!bg-primary" />
-    <p className="line-clamp-2 text-xs text-muted-foreground">
-      Aguardar <strong>{(data.wait_seconds as number) ?? 120}s</strong> · até{' '}
-      <strong>{(data.max_retries as number) ?? 2}</strong> cutucada(s)
+const TimeoutNode = ({ data, selected, type }: NodeProps) => (
+  <BaseNode title={(data.name as string) || 'Tempo de espera'} accent={ACCENTS[type]} selected={selected}>
+    <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400 !border-0" />
+    <p className="mb-1 text-zinc-400">
+      {(data.wait_seconds as number) ?? 120}s · {(data.max_retries as number) ?? 2}x
     </p>
-    <div className="mt-2 space-y-1">
-      <div className="relative flex items-center justify-between rounded bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-600">
-        <span>Respondeu</span>
+    <div className="space-y-1">
+      <div className="relative rounded bg-emerald-500/10 px-2 py-1 text-emerald-400">
+        Respondeu
         <Handle
           type="source"
           position={Position.Right}
           id="reply"
-          style={{ top: '50%', right: '-8px' }}
-          className="!bg-emerald-500"
+          style={{ top: '50%' }}
+          className="!h-2 !w-2 !bg-emerald-400 !border-0"
         />
       </div>
-      <div className="relative flex items-center justify-between rounded bg-rose-500/10 px-2 py-1 text-[10px] text-rose-600">
-        <span>Esgotou</span>
+      <div className="relative rounded bg-rose-500/10 px-2 py-1 text-rose-400">
+        Esgotou
         <Handle
           type="source"
           position={Position.Right}
           id="exhaust"
-          style={{ top: '50%', right: '-8px' }}
-          className="!bg-rose-500"
+          style={{ top: '50%' }}
+          className="!h-2 !w-2 !bg-rose-400 !border-0"
         />
       </div>
     </div>
@@ -138,6 +143,7 @@ const nodeTypes = {
   ai: AiNode,
   timeout: TimeoutNode,
 };
+
 
 // --- Editor Component ---
 
