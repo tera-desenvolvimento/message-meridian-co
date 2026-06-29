@@ -644,8 +644,13 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                       (e) => e.source === selectedNode.id && e.sourceHandle === 'exhaust',
                     );
                     return (
-                      <div className="space-y-2">
-                        <Label>Conectar "esgotou" a um bloco (opcional)</Label>
+                      <div className="space-y-2 border-t pt-4">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                          Saída padrão
+                        </Label>
+                        <p className="text-[11px] text-muted-foreground">
+                          Para onde o usuário vai se nenhuma condição for cumprida.
+                        </p>
                         <select
                           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           value={exhaustEdge?.target ?? ''}
@@ -668,7 +673,7 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                             });
                           }}
                         >
-                          <option value="">— Nenhum (usar ação acima) —</option>
+                          <option value="">— Usar ação acima —</option>
                           {nodes
                             .filter((n) => n.id !== selectedNode.id)
                             .map((n) => (
