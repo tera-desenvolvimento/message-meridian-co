@@ -383,6 +383,51 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
                 </div>
               )}
 
+              {selectedNode.type === 'message' && (
+                <div className="space-y-3 rounded-md border border-dashed p-3">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Mídia (opcional)</Label>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Tipo</Label>
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={(selectedNode.data as any).media_type ?? 'none'}
+                      onChange={(e) => updateNodeData(selectedNode.id, { media_type: e.target.value })}
+                    >
+                      <option value="none">Nenhuma</option>
+                      <option value="image">Imagem</option>
+                      <option value="document">Documento</option>
+                      <option value="video">Vídeo</option>
+                      <option value="audio">Áudio</option>
+                    </select>
+                  </div>
+                  {(selectedNode.data as any).media_type && (selectedNode.data as any).media_type !== 'none' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="text-xs">URL da mídia</Label>
+                        <Input
+                          value={(selectedNode.data as any).media_url || ''}
+                          onChange={(e) => updateNodeData(selectedNode.id, { media_url: e.target.value })}
+                          placeholder="https://..."
+                        />
+                        <p className="text-[11px] text-muted-foreground">Cole um link público (HTTPS) do arquivo.</p>
+                      </div>
+                      {(selectedNode.data as any).media_type === 'document' && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">Nome do arquivo</Label>
+                          <Input
+                            value={(selectedNode.data as any).media_filename || ''}
+                            onChange={(e) => updateNodeData(selectedNode.id, { media_filename: e.target.value })}
+                            placeholder="documento.pdf"
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+
+
               {selectedNode.type === 'ai' && (
                 <div className="space-y-2">
                   <Label>Prompt do sistema</Label>
