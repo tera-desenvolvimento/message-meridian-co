@@ -305,31 +305,33 @@ export function BotEditor({ flowId, onClose }: BotEditorProps) {
           </Button>
           <h2 className="text-lg font-semibold">Construtor de Bot</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => addNode('message')} className="gap-2">
-            <Plus className="h-3.5 w-3.5" /> Mensagem
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => addNode('choice')} className="gap-2">
-            <Plus className="h-3.5 w-3.5" /> Decisão
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => addNode('timeout')} className="gap-2">
-            <Clock className="h-3.5 w-3.5" /> Tempo de espera
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => addNode('transfer')} className="gap-2">
-            <Plus className="h-3.5 w-3.5" /> Transbordo
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => addNode('ai')} className="gap-2">
-            <Sparkles className="h-3.5 w-3.5" /> IA
-          </Button>
-          <Button onClick={handleSave} disabled={saving} className="ml-4 gap-2">
-            <Save className="h-4 w-4" />
-            {saving ? 'Salvando...' : 'Salvar Fluxo'}
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          <Save className="h-4 w-4" />
+          {saving ? 'Salvando...' : 'Salvar Fluxo'}
+        </Button>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
+        <aside className="w-48 border-r bg-surface flex flex-col gap-1 p-3">
+          <span className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Blocos</span>
+          <Button variant="ghost" size="sm" onClick={() => addNode('message')} className="justify-start gap-2">
+            <MessageSquare className="h-3.5 w-3.5" /> Mensagem
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => addNode('choice')} className="justify-start gap-2">
+            <ListTree className="h-3.5 w-3.5" /> Decisão
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => addNode('timeout')} className="justify-start gap-2">
+            <Clock className="h-3.5 w-3.5" /> Tempo de espera
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => addNode('transfer')} className="justify-start gap-2">
+            <UserPlus className="h-3.5 w-3.5" /> Transbordo
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => addNode('ai')} className="justify-start gap-2">
+            <Sparkles className="h-3.5 w-3.5" /> IA
+          </Button>
+        </aside>
         <div className="flex-1 relative">
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
