@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Bot, BotOff, CheckCircle2, Clock, Inbox, UserCheck, Users } from "lucide-react";
+import { Activity, Bot, BotOff, CheckCircle2, Clock, Inbox, TrendingDown, UserCheck, Users } from "lucide-react";
 import { api } from "@/lib/http";
 import type { Conversation } from "@/lib/types";
 import { filterConversationsByRole } from "@/lib/permissions";
@@ -9,6 +9,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
