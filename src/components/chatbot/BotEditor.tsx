@@ -72,16 +72,6 @@ const ChoiceNode = ({ data, selected, type }: NodeProps) => (
           />
         </div>
       ))}
-      <div className="relative rounded bg-amber-500/10 px-2 py-1 text-amber-400">
-        Esgotou
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="exhaust"
-          style={{ top: '50%' }}
-          className="!h-2 !w-2 !bg-amber-400 !border-0"
-        />
-      </div>
     </div>
   </BaseNode>
 );
