@@ -49,6 +49,7 @@ function DashboardContent() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeBucket, setActiveBucket] = useState<string>("open");
+  const [abandon7d, setAbandon7d] = useState<number>(0);
 
   const refresh = async () => {
     if (!ready) return;
