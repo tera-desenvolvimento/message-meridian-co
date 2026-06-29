@@ -45,6 +45,7 @@ import { Route as ApiPublicDohkoMeRouteImport } from './routes/api/public/dohko/
 import { Route as ApiPublicDohkoLogoutRouteImport } from './routes/api/public/dohko/logout'
 import { Route as ApiPublicDohkoLoginRouteImport } from './routes/api/public/dohko/login'
 import { Route as ApiPublicDohkoIntegrationRouteImport } from './routes/api/public/dohko/integration'
+import { Route as ApiPublicBotTickRouteImport } from './routes/api/public/bot/tick'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -231,6 +232,11 @@ const ApiPublicDohkoIntegrationRoute =
     path: '/api/public/dohko/integration',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBotTickRoute = ApiPublicBotTickRouteImport.update({
+  id: '/api/public/bot/tick',
+  path: '/api/public/bot/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/bot/tick': typeof ApiPublicBotTickRoute
   '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/bot/tick': typeof ApiPublicBotTickRoute
   '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/api/whapi/send': typeof ApiWhapiSendRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/bot/tick': typeof ApiPublicBotTickRoute
   '/api/public/dohko/integration': typeof ApiPublicDohkoIntegrationRoute
   '/api/public/dohko/login': typeof ApiPublicDohkoLoginRoute
   '/api/public/dohko/logout': typeof ApiPublicDohkoLogoutRoute
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/bot/tick'
     | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/bot/tick'
     | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/api/whapi/send'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
+    | '/api/public/bot/tick'
     | '/api/public/dohko/integration'
     | '/api/public/dohko/login'
     | '/api/public/dohko/logout'
@@ -489,6 +501,7 @@ export interface RootRouteChildren {
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicBotTickRoute: typeof ApiPublicBotTickRoute
   ApiPublicDohkoIntegrationRoute: typeof ApiPublicDohkoIntegrationRoute
   ApiPublicDohkoLoginRoute: typeof ApiPublicDohkoLoginRoute
   ApiPublicDohkoLogoutRoute: typeof ApiPublicDohkoLogoutRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDohkoIntegrationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/tick': {
+      id: '/api/public/bot/tick'
+      path: '/api/public/bot/tick'
+      fullPath: '/api/public/bot/tick'
+      preLoaderRoute: typeof ApiPublicBotTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -795,6 +815,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhapiSendRoute: ApiWhapiSendRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicBotTickRoute: ApiPublicBotTickRoute,
   ApiPublicDohkoIntegrationRoute: ApiPublicDohkoIntegrationRoute,
   ApiPublicDohkoLoginRoute: ApiPublicDohkoLoginRoute,
   ApiPublicDohkoLogoutRoute: ApiPublicDohkoLogoutRoute,
@@ -807,12 +828,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

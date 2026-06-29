@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Bot, BotOff, CheckCircle2, Clock, Inbox, UserCheck, Users } from "lucide-react";
+import { Activity, Bot, BotOff, CheckCircle2, Clock, Inbox, TrendingDown, UserCheck, Users } from "lucide-react";
 import { api } from "@/lib/http";
 import type { Conversation } from "@/lib/types";
 import { filterConversationsByRole } from "@/lib/permissions";
@@ -9,6 +9,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -48,12 +49,20 @@ function DashboardContent() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeBucket, setActiveBucket] = useState<string>("open");
+  const [abandon7d, setAbandon7d] = useState<number>(0);
 
   const refresh = async () => {
     if (!ready) return;
     try {
       const list = await api.listConversations();
       setConversations(list);
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("bot_abandonment_stats")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", user!.workspaceId!)
+        .gte("abandoned_at", since);
+      setAbandon7d(count ?? 0);
     } catch (e) {
       console.error("Failed to load conversations", e);
     } finally {
@@ -188,6 +197,20 @@ function DashboardContent() {
           );
         })}
       </div>
+
+      <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-4">
+        <div className="rounded-md bg-rose-500/10 p-2 text-rose-500">
+          <TrendingDown className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-medium">Abandonos do bot (últimos 7 dias)</div>
+          <div className="text-xs text-muted-foreground">
+            Conversas que esgotaram tentativas em blocos de tempo / decisão.
+          </div>
+        </div>
+        <div className="text-3xl font-bold tabular-nums">{abandon7d}</div>
+      </div>
+
 
       <div className="rounded-lg border border-border bg-card">
         <div className="border-b border-border px-4 py-3">

@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      bot_abandonment_stats: {
+        Row: {
+          abandoned_at: string
+          block_id: string | null
+          conversation_id: string
+          flow_id: string | null
+          id: string
+          reason: string
+          workspace_id: string
+        }
+        Insert: {
+          abandoned_at?: string
+          block_id?: string | null
+          conversation_id: string
+          flow_id?: string | null
+          id?: string
+          reason?: string
+          workspace_id: string
+        }
+        Update: {
+          abandoned_at?: string
+          block_id?: string | null
+          conversation_id?: string
+          flow_id?: string | null
+          id?: string
+          reason?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_abandonment_stats_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_abandonment_stats_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "bot_flows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_abandonment_stats_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_flows: {
         Row: {
           created_at: string
@@ -61,6 +113,8 @@ export type Database = {
           current_block_id: string | null
           flow_id: string
           id: string
+          last_prompt_at: string | null
+          retry_count: number
           updated_at: string
           variables: Json
         }
@@ -69,6 +123,8 @@ export type Database = {
           current_block_id?: string | null
           flow_id: string
           id?: string
+          last_prompt_at?: string | null
+          retry_count?: number
           updated_at?: string
           variables?: Json
         }
@@ -77,6 +133,8 @@ export type Database = {
           current_block_id?: string | null
           flow_id?: string
           id?: string
+          last_prompt_at?: string | null
+          retry_count?: number
           updated_at?: string
           variables?: Json
         }
