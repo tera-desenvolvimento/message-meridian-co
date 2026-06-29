@@ -296,6 +296,59 @@ async function sendBotResponse(workspaceId: string, externalId: string, content:
   }
 }
 
+async function sendBotMedia(
+  workspaceId: string,
+  externalId: string,
+  mediaType: string,
+  mediaUrl: string,
+  caption: string,
+  filename?: string,
+) {
+  const { data: integration } = await supabaseAdmin
+    .from("workspace_integrations")
+    .select("api_url, token")
+    .eq("workspace_id", workspaceId)
+    .eq("provider", "whapi")
+    .maybeSingle();
+
+  if (!integration?.token || !integration.api_url) {
+    console.warn("🤖 Whapi não configurado neste workspace.");
+    return;
+  }
+
+  const endpointMap: Record<string, string> = {
+    image: "image",
+    document: "document",
+    video: "video",
+    audio: "audio",
+  };
+  const endpoint = endpointMap[mediaType];
+  if (!endpoint) return;
+
+  const apiUrl = integration.api_url.replace(/\/$/, "");
+  const body: any = { to: externalId, media: mediaUrl };
+  if (caption && mediaType !== "audio") body.caption = caption;
+  if (filename && mediaType === "document") body.filename = filename;
+
+  try {
+    const res = await fetch(`${apiUrl}/messages/${endpoint}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${integration.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("🤖 Whapi mídia erro:", res.status, await res.text());
+    } else {
+      console.log(`🤖 Mídia (${mediaType}) enviada para ${externalId}.`);
+    }
+  } catch (e) {
+    console.error("🤖 Erro ao enviar mídia:", e);
+  }
+}
+
 async function getDefaultFlowId(workspaceId: string): Promise<string | null> {
   const { data } = await supabaseAdmin
     .from("workspaces")
