@@ -3,12 +3,22 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const MAX_EXECUTION_DEPTH = 25;
 const AI_HISTORY_LIMIT = 12;
 const AI_TIMEOUT_MS = 20_000;
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_WAIT_SECONDS = 120;
 
 type Conv = {
   id: string;
   bot_active: boolean | null;
   workspace_id: string | null;
   external_id: string | null;
+};
+
+type BotStateRow = {
+  conversation_id: string;
+  flow_id: string;
+  current_block_id: string | null;
+  last_prompt_at: string | null;
+  retry_count: number | null;
 };
 
 export async function processBotMessage(conversationId: string, messageContent: string) {
@@ -33,7 +43,7 @@ export async function processBotMessage(conversationId: string, messageContent: 
       .maybeSingle();
 
     const flowId: string | null =
-      state?.flow_id || (await getDefaultFlowId(conv.workspace_id!));
+      (state as any)?.flow_id || (await getDefaultFlowId(conv.workspace_id!));
     if (!flowId) {
       console.log("🤖 Nenhum fluxo configurado para este workspace.");
       return;
@@ -51,12 +61,12 @@ export async function processBotMessage(conversationId: string, messageContent: 
       return;
     }
 
-    let currentBlockId: string | null = state?.current_block_id ?? null;
+    let currentBlockId: string | null = (state as any)?.current_block_id ?? null;
 
     if (!currentBlockId) {
       currentBlockId = definition.start_block ?? definition.blocks[0].id;
       if (currentBlockId) {
-        await upsertBotState(conversationId, flowId, currentBlockId);
+        await upsertBotState(conversationId, flowId, currentBlockId, { resetRetry: true });
         await executeBlock(conv as Conv, definition, currentBlockId, 0);
       }
       return;
@@ -65,31 +75,41 @@ export async function processBotMessage(conversationId: string, messageContent: 
     const currentBlock = definition.blocks.find((b: any) => b.id === currentBlockId);
     if (!currentBlock) {
       console.warn(`🤖 Bloco atual ${currentBlockId} não existe mais. Resetando.`);
-      await upsertBotState(conversationId, flowId, definition.start_block);
+      await upsertBotState(conversationId, flowId, definition.start_block, { resetRetry: true });
       return;
     }
 
     let nextBlockId: string | null = null;
+    const retryCount = (state as any)?.retry_count ?? 0;
 
     if (currentBlock.type === "choice") {
       const input = messageContent.trim().toLowerCase();
-      const option = currentBlock.options?.find(
+      const optionIdx = (currentBlock.options ?? []).findIndex(
         (o: any) => String(o.label ?? "").trim().toLowerCase() === input,
       );
-      if (option?.next) {
-        nextBlockId = option.next;
+      if (optionIdx >= 0 && currentBlock.options[optionIdx]?.next) {
+        nextBlockId = currentBlock.options[optionIdx].next;
       } else {
-        if (conv.workspace_id && conv.external_id) {
-          await sendBotResponse(
-            conv.workspace_id,
-            conv.external_id,
-            `Opção inválida. ${currentBlock.content ?? ""}`.trim(),
-          );
+        // resposta inválida — contabiliza tentativa
+        const maxRetries = Number(currentBlock.max_retries ?? DEFAULT_MAX_RETRIES);
+        const onExhaust = currentBlock.on_exhaust ?? "transfer";
+        if (retryCount < maxRetries) {
+          const retryMsg =
+            currentBlock.retry_message ||
+            `Não entendi. ${currentBlock.content ?? ""}`.trim();
+          if (conv.workspace_id && conv.external_id) {
+            await sendBotResponse(conv.workspace_id, conv.external_id, retryMsg);
+          }
+          await bumpRetry(conversationId, retryCount + 1);
+          return;
         }
+        await handleExhaust(conv as Conv, flowId, currentBlock, onExhaust);
         return;
       }
+    } else if (currentBlock.type === "timeout") {
+      // Usuário respondeu antes do timeout (ou após cutucada) — avança pelo handle "resposta"
+      nextBlockId = currentBlock.next_on_reply ?? currentBlock.next ?? null;
     } else if (currentBlock.type === "ai") {
-      // Bloco de IA: gera resposta e avança automaticamente.
       await runAiBlock(conv as Conv, currentBlock, messageContent);
       nextBlockId = currentBlock.next ?? null;
     } else {
@@ -97,7 +117,7 @@ export async function processBotMessage(conversationId: string, messageContent: 
     }
 
     if (nextBlockId) {
-      await upsertBotState(conversationId, flowId, nextBlockId);
+      await upsertBotState(conversationId, flowId, nextBlockId, { resetRetry: true });
       await executeBlock(conv as Conv, definition, nextBlockId, 0);
     }
   } catch (e) {
@@ -120,10 +140,15 @@ async function executeBlock(
 
   try {
     if (block.type === "ai") {
-      // Em execução automática (sem input do usuário) usamos string vazia.
       await runAiBlock(conv, block, "");
     } else if (block.content && conv.workspace_id && conv.external_id) {
       await sendBotResponse(conv.workspace_id, conv.external_id, block.content);
+    }
+
+    if (block.type === "timeout" || block.type === "choice") {
+      // Marca momento da cutucada inicial / pergunta pendente
+      await touchPromptAt(conv.id);
+      return; // aguarda input do usuário ou tick do cron
     }
 
     if (block.type === "transfer") {
@@ -137,9 +162,8 @@ async function executeBlock(
       return;
     }
 
-    // Avança automaticamente quando o bloco tem `next` e não exige input do usuário.
     if (block.next && (block.type === "message" || block.type === "ai")) {
-      await upsertBotState(conv.id, null, block.next);
+      await upsertBotState(conv.id, null, block.next, { resetRetry: true });
       await executeBlock(conv, definition, block.next, depth + 1);
     }
   } catch (e) {
@@ -151,16 +175,79 @@ async function upsertBotState(
   conversationId: string,
   flowId: string | null,
   currentBlockId: string,
+  opts: { resetRetry?: boolean } = {},
 ) {
   const payload: any = {
     conversation_id: conversationId,
     current_block_id: currentBlockId,
   };
   if (flowId) payload.flow_id = flowId;
+  if (opts.resetRetry) {
+    payload.retry_count = 0;
+    payload.last_prompt_at = null;
+  }
   const { error } = await supabaseAdmin
     .from("bot_states")
     .upsert(payload, { onConflict: "conversation_id" });
   if (error) console.error("🤖 Erro ao salvar estado do bot:", error.message);
+}
+
+async function bumpRetry(conversationId: string, newCount: number) {
+  await supabaseAdmin
+    .from("bot_states")
+    .update({ retry_count: newCount, last_prompt_at: new Date().toISOString() } as any)
+    .eq("conversation_id", conversationId);
+}
+
+async function touchPromptAt(conversationId: string) {
+  await supabaseAdmin
+    .from("bot_states")
+    .update({ last_prompt_at: new Date().toISOString(), retry_count: 0 } as any)
+    .eq("conversation_id", conversationId);
+}
+
+async function handleExhaust(
+  conv: Conv,
+  flowId: string,
+  block: any,
+  action: "end" | "transfer",
+) {
+  if (action === "end") {
+    await registerAbandonment(conv, flowId, block.id, "no_response");
+    await supabaseAdmin
+      .from("conversations")
+      .update({ bot_active: false, status: "CLOSED" })
+      .eq("id", conv.id);
+    if (conv.workspace_id && conv.external_id && block.end_message) {
+      await sendBotResponse(conv.workspace_id, conv.external_id, block.end_message);
+    }
+    console.log("🤖 Conversa encerrada por abandono.");
+  } else {
+    await supabaseAdmin
+      .from("conversations")
+      .update({ bot_active: false, status: "PENDING", assigned_to: null })
+      .eq("id", conv.id);
+    if (conv.workspace_id && conv.external_id && block.transfer_message) {
+      await sendBotResponse(conv.workspace_id, conv.external_id, block.transfer_message);
+    }
+    console.log("🤖 Transbordo por esgotamento de tentativas.");
+  }
+}
+
+async function registerAbandonment(
+  conv: Conv,
+  flowId: string | null,
+  blockId: string,
+  reason: string,
+) {
+  if (!conv.workspace_id) return;
+  await supabaseAdmin.from("bot_abandonment_stats").insert({
+    workspace_id: conv.workspace_id,
+    conversation_id: conv.id,
+    flow_id: flowId,
+    block_id: blockId,
+    reason,
+  } as any);
 }
 
 async function sendBotResponse(workspaceId: string, externalId: string, content: string) {
@@ -213,6 +300,69 @@ async function getDefaultFlowId(workspaceId: string): Promise<string | null> {
     .limit(1)
     .maybeSingle();
   return (firstFlow as any)?.id || null;
+}
+
+// ===== Tick: varre timeouts pendentes =====
+export async function tickTimeouts(): Promise<{ processed: number }> {
+  const { data: states } = await supabaseAdmin
+    .from("bot_states")
+    .select("conversation_id, flow_id, current_block_id, last_prompt_at, retry_count")
+    .not("last_prompt_at", "is", null)
+    .limit(200);
+
+  const rows = (states ?? []) as unknown as BotStateRow[];
+  if (!rows.length) return { processed: 0 };
+
+  let processed = 0;
+  for (const s of rows) {
+    if (!s.current_block_id || !s.flow_id || !s.last_prompt_at) continue;
+
+    const { data: flow } = await supabaseAdmin
+      .from("bot_flows")
+      .select("definition")
+      .eq("id", s.flow_id)
+      .maybeSingle();
+    const def = (flow as any)?.definition;
+    const block = def?.blocks?.find((b: any) => b.id === s.current_block_id);
+    if (!block || block.type !== "timeout") continue;
+
+    const waitSec = Number(block.wait_seconds ?? DEFAULT_WAIT_SECONDS);
+    const elapsed = (Date.now() - new Date(s.last_prompt_at).getTime()) / 1000;
+    if (elapsed < waitSec) continue;
+
+    const { data: conv } = await supabaseAdmin
+      .from("conversations")
+      .select("id, bot_active, workspace_id, external_id")
+      .eq("id", s.conversation_id)
+      .maybeSingle();
+    if (!conv || !conv.bot_active) continue;
+
+    const maxRetries = Number(block.max_retries ?? DEFAULT_MAX_RETRIES);
+    const retryCount = s.retry_count ?? 0;
+    const onExhaust = (block.on_exhaust ?? "end") as "end" | "transfer";
+
+    if (retryCount < maxRetries) {
+      const nudge =
+        block.nudge_message ||
+        block.content ||
+        "Você ainda está aí? Posso ajudar em mais alguma coisa?";
+      if (conv.workspace_id && conv.external_id) {
+        await sendBotResponse(conv.workspace_id, conv.external_id, nudge);
+      }
+      await supabaseAdmin
+        .from("bot_states")
+        .update({
+          retry_count: retryCount + 1,
+          last_prompt_at: new Date().toISOString(),
+        } as any)
+        .eq("conversation_id", s.conversation_id);
+      processed++;
+    } else {
+      await handleExhaust(conv as Conv, s.flow_id, block, onExhaust);
+      processed++;
+    }
+  }
+  return { processed };
 }
 
 // ===== IA =====
@@ -310,7 +460,6 @@ async function callAi(
       return json?.choices?.[0]?.message?.content ?? "";
     }
 
-    // Gemini
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
       cfg.model,
     )}:generateContent?key=${encodeURIComponent(cfg.token)}`;
