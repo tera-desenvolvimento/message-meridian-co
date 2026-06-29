@@ -83,10 +83,30 @@ export async function processBotMessage(conversationId: string, messageContent: 
     const retryCount = (state as any)?.retry_count ?? 0;
 
     if (currentBlock.type === "choice") {
-      const input = messageContent.trim().toLowerCase();
-      const optionIdx = (currentBlock.options ?? []).findIndex(
-        (o: any) => String(o.label ?? "").trim().toLowerCase() === input,
-      );
+      const raw = messageContent ?? "";
+      const input = raw.trim().toLowerCase();
+      const matchOption = (o: any) => {
+        const operator = (o.operator ?? "equals") as string;
+        const value = String(o.value ?? o.label ?? "").trim().toLowerCase();
+        switch (operator) {
+          case "exists":
+            return input.length > 0;
+          case "contains":
+            return value.length > 0 && input.includes(value);
+          case "startsWith":
+            return value.length > 0 && input.startsWith(value);
+          case "regex":
+            try {
+              return new RegExp(o.value ?? "", "i").test(raw);
+            } catch {
+              return false;
+            }
+          case "equals":
+          default:
+            return input === value;
+        }
+      };
+      const optionIdx = (currentBlock.options ?? []).findIndex(matchOption);
       if (optionIdx >= 0 && currentBlock.options[optionIdx]?.next) {
         nextBlockId = currentBlock.options[optionIdx].next;
       } else {
