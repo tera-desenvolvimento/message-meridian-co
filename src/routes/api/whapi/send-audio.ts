@@ -11,6 +11,8 @@ function jsonResponse(body: unknown, status = 200) {
 
 const MAX_BYTES = 16 * 1024 * 1024; // 16 MB
 
+const WHATSAPP_CHAT_ID_RE = /^(?:\d{7,18}|\d{7,18}@s\.whatsapp\.net|\d{10,18}@g\.us|\d{10,18}@newsletter|\d{7,18}@lid)$/;
+
 function extFromMime(mime: string): string {
   if (mime.includes("webm")) return "webm";
   if (mime.includes("mp4") || mime.includes("m4a")) return "m4a";
@@ -18,6 +20,23 @@ function extFromMime(mime: string): string {
   if (mime.includes("ogg")) return "ogg";
   if (mime.includes("wav")) return "wav";
   return "bin";
+}
+
+function getWhapiErrorMessage(bodyText: string, bodyJson: any): string {
+  const err = bodyJson?.error;
+  if (typeof bodyJson?.message === "string") return bodyJson.message;
+  if (typeof err?.message === "string") return err.message;
+  if (typeof err === "string") return err;
+  if (typeof bodyJson?.detail === "string") return bodyJson.detail;
+  return bodyText.slice(0, 300) || "Erro desconhecido";
+}
+
+function mapWhapiStatus(status: number): number {
+  // Avoid returning 5xx for handled upstream validation/auth responses because the
+  // preview treats server 5xx from route handlers as runtime failures. These are
+  // actionable configuration/recipient errors for the current workspace.
+  if ([400, 401, 402, 403, 404, 413, 415, 429].includes(status)) return status;
+  return 424;
 }
 
 export const Route = createFileRoute("/api/whapi/send-audio")({
@@ -70,8 +89,18 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
             .maybeSingle();
           if (convErr) return jsonResponse({ error: "Erro ao buscar conversa" }, 500);
           if (!conv) return jsonResponse({ error: "Conversa não encontrada" }, 404);
-          if (!conv.external_id) {
+          const to = String(conv.external_id || "").trim();
+          if (!to) {
             return jsonResponse({ error: "Conversa sem chat_id externo" }, 400);
+          }
+          if (!WHATSAPP_CHAT_ID_RE.test(to)) {
+            return jsonResponse(
+              {
+                error:
+                  "Esta conversa não possui um chat_id válido do WhatsApp. Use um número real com DDI/DDD, por exemplo 5511999999999.",
+              },
+              400,
+            );
           }
 
           // Load Whapi integration (admin)
@@ -85,14 +114,16 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
           if (!integration || !integration.enabled || !integration.token) {
             return jsonResponse({ error: "Integração Whapi não configurada" }, 400);
           }
+          if (!integration.api_url) {
+            return jsonResponse({ error: "URL da integração Whapi não configurada" }, 400);
+          }
 
           // Upload to Storage
           const ext = extFromMime(mime);
           const objectPath = `audio/${conv.id}/${crypto.randomUUID()}.${ext}`;
-          const bytes = new Uint8Array(await file.arrayBuffer());
           const { error: upErr } = await supabaseAdmin.storage
             .from("chat-media")
-            .upload(objectPath, bytes, { contentType: mime, upsert: false });
+            .upload(objectPath, file, { contentType: mime, upsert: false });
           if (upErr) {
             console.error("send-audio upload error", upErr);
             return jsonResponse({ error: "Falha ao salvar áudio" }, 500);
@@ -117,6 +148,12 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
           // Send to Whapi /messages/voice
           const apiUrl = integration.api_url.replace(/\/$/, "");
           const whapiUrl = `${apiUrl}/messages/voice`;
+          console.log("🎤 [whapi/send-audio] Enviando áudio para Whapi", {
+            to,
+            url: whapiUrl,
+            mime,
+            bytes: file.size,
+          });
           let whapiRes: Response;
           try {
             whapiRes = await fetch(whapiUrl, {
@@ -126,11 +163,12 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
                 "Content-Type": "application/json",
                 Accept: "application/json",
               },
-              body: JSON.stringify({ to: conv.external_id, media: signed.signedUrl }),
+              body: JSON.stringify({ to, media: signed.signedUrl }),
             });
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            return jsonResponse({ error: `Falha de rede ao contatar Whapi: ${msg}` }, 502);
+            console.error("🎤 [whapi/send-audio] Falha de rede ao chamar Whapi:", msg);
+            return jsonResponse({ error: `Falha de rede ao contatar Whapi: ${msg}` }, 424);
           }
 
           const whapiText = await whapiRes.text();
@@ -141,16 +179,18 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
             /* not JSON */
           }
           if (!whapiRes.ok) {
-            const apiErrMsg =
-              whapiJson?.message ||
-              whapiJson?.error?.message ||
-              whapiText.slice(0, 200) ||
-              "Erro desconhecido";
+            console.error("🎤 [whapi/send-audio] Whapi retornou erro:", {
+              status: whapiRes.status,
+              body: whapiText.slice(0, 1000),
+            });
+            const apiErrMsg = getWhapiErrorMessage(whapiText, whapiJson);
             return jsonResponse(
               { error: `Whapi retornou ${whapiRes.status}: ${apiErrMsg}` },
-              502,
+              mapWhapiStatus(whapiRes.status),
             );
           }
+
+          console.log("🎤 [whapi/send-audio] ✅ Whapi aceitou o áudio");
 
           const externalId: string | null =
             whapiJson?.message?.id || whapiJson?.id || null;
