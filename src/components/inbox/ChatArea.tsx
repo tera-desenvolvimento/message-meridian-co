@@ -739,29 +739,108 @@ export function ChatArea({
                   }
                   className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
-                <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5">
+                  <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
                     <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
                       Resposta
                     </span>
                     <span className="hidden sm:inline">via WhatsApp</span>
+                    {recState === "rec" && (
+                      <span className="flex items-center gap-1.5 font-medium text-destructive">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
+                        Gravando {fmtTime(seconds)}
+                      </span>
+                    )}
+                    {recState === "preview" && audioUrl && (
+                      <audio
+                        src={audioUrl}
+                        controls
+                        className="h-8 min-w-[180px] max-w-[260px]"
+                      />
+                    )}
                   </div>
-                  <button
-                    onClick={handleSend}
-                    disabled={sending || !draft.trim()}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
-                      "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {recState === "idle" && (
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        disabled={sending || busy || composerLocked}
+                        title="Gravar áudio"
+                        aria-label="Gravar áudio"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-foreground/80 transition hover:bg-surface-2 disabled:opacity-50"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </button>
                     )}
-                  >
-                    {sending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
+                    {recState === "rec" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={cancelRecording}
+                          title="Cancelar"
+                          aria-label="Cancelar gravação"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition hover:bg-surface-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopRecording}
+                          title="Parar"
+                          aria-label="Parar gravação"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-destructive text-destructive-foreground transition hover:opacity-90"
+                        >
+                          <Square className="h-3.5 w-3.5" />
+                        </button>
+                      </>
                     )}
-                    Enviar
-                  </button>
+                    {recState === "preview" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={resetAudio}
+                          disabled={sendingAudio}
+                          title="Descartar"
+                          aria-label="Descartar áudio"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition hover:bg-surface-2 disabled:opacity-50"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={sendAudio}
+                          disabled={sendingAudio}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
+                        >
+                          {sendingAudio ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
+                          Enviar áudio
+                        </button>
+                      </>
+                    )}
+                    {recState !== "preview" && (
+                      <button
+                        onClick={handleSend}
+                        disabled={sending || !draft.trim() || recState === "rec"}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
+                          "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                        )}
+                      >
+                        {sending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        Enviar
+                      </button>
+                    )}
+                  </div>
                 </div>
+
               </div>
             </>
           )}
