@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 
 function jsonResponse(body: unknown, status = 200) {
@@ -26,6 +25,7 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const authHeader = request.headers.get("authorization");
           if (!authHeader?.startsWith("Bearer ")) {
             return jsonResponse({ error: "Não autenticado" }, 401);
