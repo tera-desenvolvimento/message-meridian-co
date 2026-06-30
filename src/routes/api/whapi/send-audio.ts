@@ -215,7 +215,7 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
               from_me: true,
               sender_name: senderName,
               external_id: externalId,
-              media_url: signed.signedUrl,
+              media_url: signedUrl,
               media_type: "audio",
               media_mime_type: mime,
             })
