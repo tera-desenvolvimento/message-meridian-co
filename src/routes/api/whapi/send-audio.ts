@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const authHeader = request.headers.get("authorization");
           if (!authHeader?.startsWith("Bearer ")) {
             return jsonResponse({ error: "Não autenticado" }, 401);
