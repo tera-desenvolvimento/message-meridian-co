@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Play, Pause, X } from "lucide-react";
+import { Bot, Play, Pause, X, Mic, Square, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,6 +92,130 @@ export function ChatArea({
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ---- Audio recording state ----
+  const [recState, setRecState] = useState<"idle" | "rec" | "preview">("idle");
+  const [seconds, setSeconds] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioMime, setAudioMime] = useState<string>("audio/webm");
+  const [sendingAudio, setSendingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelledRef = useRef(false);
+
+  function stopStream() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  function resetAudio() {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioUrl(null);
+    setAudioBlob(null);
+    setSeconds(0);
+    setRecState("idle");
+  }
+
+  async function startRecording() {
+    if (composerLocked || sending || busy) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported?.("audio/mp4")
+          ? "audio/mp4"
+          : "";
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      cancelledRef.current = false;
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.onstop = () => {
+        stopStream();
+        if (cancelledRef.current) {
+          chunksRef.current = [];
+          return;
+        }
+        const type = mr.mimeType || mime || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type });
+        chunksRef.current = [];
+        const url = URL.createObjectURL(blob);
+        setAudioBlob(blob);
+        setAudioUrl(url);
+        setAudioMime(type);
+        setRecState("preview");
+      };
+      mr.start();
+      setSeconds(0);
+      setRecState("rec");
+      timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    } catch (e) {
+      toast.error("Não foi possível acessar o microfone.");
+      stopStream();
+    }
+  }
+
+  function stopRecording() {
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") mr.stop();
+  }
+
+  function cancelRecording() {
+    cancelledRef.current = true;
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") mr.stop();
+    else stopStream();
+    setSeconds(0);
+    setRecState("idle");
+  }
+
+  async function sendAudio() {
+    if (!audioBlob || !conversation) return;
+    setSendingAudio(true);
+    try {
+      const wasUnassigned = !conversation.assignedTo;
+      if (wasUnassigned && !isGroup) {
+        await api.assignConversation(conversation.id);
+      }
+      await api.sendAudioMessage(conversation.id, audioBlob, audioMime);
+      resetAudio();
+      onSent();
+      if (wasUnassigned && !isGroup) onAssigned();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar áudio");
+    } finally {
+      setSendingAudio(false);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopStream();
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    cancelRecording();
+    resetAudio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.id]);
+
+  function fmtTime(s: number) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  }
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -615,29 +739,108 @@ export function ChatArea({
                   }
                   className="block max-h-40 min-h-[60px] w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
-                <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5">
+                  <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
                     <span className="rounded border border-border-strong bg-surface-2 px-1.5 py-0.5 font-mono">
                       Resposta
                     </span>
                     <span className="hidden sm:inline">via WhatsApp</span>
+                    {recState === "rec" && (
+                      <span className="flex items-center gap-1.5 font-medium text-destructive">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
+                        Gravando {fmtTime(seconds)}
+                      </span>
+                    )}
+                    {recState === "preview" && audioUrl && (
+                      <audio
+                        src={audioUrl}
+                        controls
+                        className="h-8 min-w-[180px] max-w-[260px]"
+                      />
+                    )}
                   </div>
-                  <button
-                    onClick={handleSend}
-                    disabled={sending || !draft.trim()}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
-                      "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {recState === "idle" && (
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        disabled={sending || busy || composerLocked}
+                        title="Gravar áudio"
+                        aria-label="Gravar áudio"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-foreground/80 transition hover:bg-surface-2 disabled:opacity-50"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </button>
                     )}
-                  >
-                    {sending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
+                    {recState === "rec" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={cancelRecording}
+                          title="Cancelar"
+                          aria-label="Cancelar gravação"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition hover:bg-surface-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopRecording}
+                          title="Parar"
+                          aria-label="Parar gravação"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-destructive text-destructive-foreground transition hover:opacity-90"
+                        >
+                          <Square className="h-3.5 w-3.5" />
+                        </button>
+                      </>
                     )}
-                    Enviar
-                  </button>
+                    {recState === "preview" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={resetAudio}
+                          disabled={sendingAudio}
+                          title="Descartar"
+                          aria-label="Descartar áudio"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition hover:bg-surface-2 disabled:opacity-50"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={sendAudio}
+                          disabled={sendingAudio}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
+                        >
+                          {sendingAudio ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
+                          Enviar áudio
+                        </button>
+                      </>
+                    )}
+                    {recState !== "preview" && (
+                      <button
+                        onClick={handleSend}
+                        disabled={sending || !draft.trim() || recState === "rec"}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-semibold text-primary-foreground transition",
+                          "hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50",
+                        )}
+                      >
+                        {sending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        Enviar
+                      </button>
+                    )}
+                  </div>
                 </div>
+
               </div>
             </>
           )}

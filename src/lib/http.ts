@@ -188,6 +188,28 @@ export const api = {
     };
   },
 
+  async sendAudioMessage(conversationId: string, blob: Blob, mime: string): Promise<void> {
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) throw createAuthRequiredError();
+
+    const form = new FormData();
+    form.append("conversationId", conversationId);
+    const ext = mime.includes("webm") ? "webm" : mime.includes("mp4") ? "m4a" : "bin";
+    form.append("file", new File([blob], `voice.${ext}`, { type: mime }));
+
+    const res = await fetch("/api/whapi/send-audio", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+    let json: any = null;
+    try { json = await res.json(); } catch { /* ignore */ }
+    if (!res.ok) {
+      throw new Error(json?.error || `Falha ao enviar áudio (HTTP ${res.status})`);
+    }
+  },
+
   async assignConversation(conversationId: string, userId?: string): Promise<Conversation> {
     const uid = userId ?? (await getSessionUserId());
     const { data, error } = await supabase
