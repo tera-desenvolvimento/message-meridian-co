@@ -93,7 +93,11 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
           if (!to) {
             return jsonResponse({ error: "Conversa sem chat_id externo" }, 400);
           }
-          if (!WHATSAPP_CHAT_ID_RE.test(to)) {
+          // Conversas de teste (external_id começando com "test-") pulam o envio
+          // real para o Whapi e apenas salvam a mensagem localmente, permitindo
+          // visualizar como o áudio aparece na UI.
+          const isTestConversation = to.startsWith("test-");
+          if (!isTestConversation && !WHATSAPP_CHAT_ID_RE.test(to)) {
             return jsonResponse(
               {
                 error:
