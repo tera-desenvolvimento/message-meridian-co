@@ -196,7 +196,7 @@ export const api = {
     const form = new FormData();
     form.append("conversationId", conversationId);
     const ext = mime.includes("webm") ? "webm" : mime.includes("mp4") ? "m4a" : "bin";
-    form.append("file", new File([blob], `voice.${ext}`, { type: mime }));
+    form.append("file", blob, `voice.${ext}`);
 
     const res = await fetch("/api/whapi/send-audio", {
       method: "POST",
