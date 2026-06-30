@@ -29,6 +29,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as DohkoTenantsRouteImport } from './routes/dohko.tenants'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiWhapiStartConversationRouteImport } from './routes/api/whapi/start-conversation'
+import { Route as ApiWhapiSendAudioRouteImport } from './routes/api/whapi/send-audio'
 import { Route as ApiWhapiSendRouteImport } from './routes/api/whapi/send'
 import { Route as ApiWhapiRefreshAvatarsRouteImport } from './routes/api/whapi/refresh-avatars'
 import { Route as ApiWhapiChannelRouteImport } from './routes/api/whapi/channel'
@@ -148,6 +149,11 @@ const ApiWhapiStartConversationRoute =
     path: '/api/whapi/start-conversation',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiWhapiSendAudioRoute = ApiWhapiSendAudioRouteImport.update({
+  id: '/api/whapi/send-audio',
+  path: '/api/whapi/send-audio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWhapiSendRoute = ApiWhapiSendRouteImport.update({
   id: '/api/whapi/send',
   path: '/api/whapi/send',
@@ -265,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/api/whapi/channel': typeof ApiWhapiChannelRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
+  '/api/whapi/send-audio': typeof ApiWhapiSendAudioRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/bot/tick': typeof ApiPublicBotTickRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/api/whapi/channel': typeof ApiWhapiChannelRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
+  '/api/whapi/send-audio': typeof ApiWhapiSendAudioRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/bot/tick': typeof ApiPublicBotTickRoute
@@ -343,6 +351,7 @@ export interface FileRoutesById {
   '/api/whapi/channel': typeof ApiWhapiChannelRoute
   '/api/whapi/refresh-avatars': typeof ApiWhapiRefreshAvatarsRoute
   '/api/whapi/send': typeof ApiWhapiSendRoute
+  '/api/whapi/send-audio': typeof ApiWhapiSendAudioRoute
   '/api/whapi/start-conversation': typeof ApiWhapiStartConversationRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/bot/tick': typeof ApiPublicBotTickRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/api/whapi/channel'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
+    | '/api/whapi/send-audio'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
     | '/api/public/bot/tick'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/api/whapi/channel'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
+    | '/api/whapi/send-audio'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
     | '/api/public/bot/tick'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/whapi/channel'
     | '/api/whapi/refresh-avatars'
     | '/api/whapi/send'
+    | '/api/whapi/send-audio'
     | '/api/whapi/start-conversation'
     | '/lovable/email/suppression'
     | '/api/public/bot/tick'
@@ -499,6 +511,7 @@ export interface RootRouteChildren {
   ApiWhapiChannelRoute: typeof ApiWhapiChannelRoute
   ApiWhapiRefreshAvatarsRoute: typeof ApiWhapiRefreshAvatarsRoute
   ApiWhapiSendRoute: typeof ApiWhapiSendRoute
+  ApiWhapiSendAudioRoute: typeof ApiWhapiSendAudioRoute
   ApiWhapiStartConversationRoute: typeof ApiWhapiStartConversationRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBotTickRoute: typeof ApiPublicBotTickRoute
@@ -652,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/api/whapi/start-conversation'
       fullPath: '/api/whapi/start-conversation'
       preLoaderRoute: typeof ApiWhapiStartConversationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whapi/send-audio': {
+      id: '/api/whapi/send-audio'
+      path: '/api/whapi/send-audio'
+      fullPath: '/api/whapi/send-audio'
+      preLoaderRoute: typeof ApiWhapiSendAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/whapi/send': {
@@ -813,6 +833,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhapiChannelRoute: ApiWhapiChannelRoute,
   ApiWhapiRefreshAvatarsRoute: ApiWhapiRefreshAvatarsRoute,
   ApiWhapiSendRoute: ApiWhapiSendRoute,
+  ApiWhapiSendAudioRoute: ApiWhapiSendAudioRoute,
   ApiWhapiStartConversationRoute: ApiWhapiStartConversationRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBotTickRoute: ApiPublicBotTickRoute,
