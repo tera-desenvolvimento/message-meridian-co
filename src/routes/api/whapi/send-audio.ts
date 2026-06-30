@@ -121,10 +121,9 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
           // Upload to Storage
           const ext = extFromMime(mime);
           const objectPath = `audio/${conv.id}/${crypto.randomUUID()}.${ext}`;
-          const bytes = new Uint8Array(await file.arrayBuffer());
           const { error: upErr } = await supabaseAdmin.storage
             .from("chat-media")
-            .upload(objectPath, bytes, { contentType: mime, upsert: false });
+            .upload(objectPath, file, { contentType: mime, upsert: false });
           if (upErr) {
             console.error("send-audio upload error", upErr);
             return jsonResponse({ error: "Falha ao salvar áudio" }, 500);
