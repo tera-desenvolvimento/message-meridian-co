@@ -114,6 +114,9 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
           if (!integration || !integration.enabled || !integration.token) {
             return jsonResponse({ error: "Integração Whapi não configurada" }, 400);
           }
+          if (!integration.api_url) {
+            return jsonResponse({ error: "URL da integração Whapi não configurada" }, 400);
+          }
 
           // Upload to Storage
           const ext = extFromMime(mime);
