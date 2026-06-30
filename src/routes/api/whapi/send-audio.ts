@@ -107,22 +107,13 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
             );
           }
 
-          // Load Whapi integration (admin)
-          const { data: integration, error: integErr } = await supabaseAdmin
-            .from("workspace_integrations")
-            .select("api_url, token, enabled")
-            .eq("workspace_id", conv.workspace_id)
-            .eq("provider", "whapi")
-            .maybeSingle();
-          if (integErr) return jsonResponse({ error: "Erro ao buscar integração" }, 500);
-          if (!integration || !integration.enabled || !integration.token) {
-            return jsonResponse({ error: "Integração Whapi não configurada" }, 400);
-          }
-          if (!integration.api_url) {
-            return jsonResponse({ error: "URL da integração Whapi não configurada" }, 400);
-          }
+          // Para conversas de teste, pulamos a integração Whapi: só fazemos
+          // upload do áudio e geramos a URL assinada para preview na UI.
+          let signedUrl: string;
+          let senderName = "Agent";
+          let externalId: string | null = null;
 
-          // Upload to Storage
+          // Upload to Storage (sempre)
           const ext = extFromMime(mime);
           const objectPath = `audio/${conv.id}/${crypto.randomUUID()}.${ext}`;
           const { error: upErr } = await supabaseAdmin.storage
@@ -133,13 +124,13 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
             return jsonResponse({ error: "Falha ao salvar áudio" }, 500);
           }
 
-          // Signed URL for Whapi to fetch (1h)
           const { data: signed, error: signErr } = await supabaseAdmin.storage
             .from("chat-media")
             .createSignedUrl(objectPath, 60 * 60);
           if (signErr || !signed?.signedUrl) {
             return jsonResponse({ error: "Falha ao gerar URL de áudio" }, 500);
           }
+          signedUrl = signed.signedUrl;
 
           // Sender name
           const { data: prof } = await supabaseAdmin
@@ -147,57 +138,73 @@ export const Route = createFileRoute("/api/whapi/send-audio")({
             .select("name")
             .eq("id", userId)
             .maybeSingle();
-          const senderName = prof?.name || "Agent";
+          senderName = prof?.name || "Agent";
 
-          // Send to Whapi /messages/voice
-          const apiUrl = integration.api_url.replace(/\/$/, "");
-          const whapiUrl = `${apiUrl}/messages/voice`;
-          console.log("🎤 [whapi/send-audio] Enviando áudio para Whapi", {
-            to,
-            url: whapiUrl,
-            mime,
-            bytes: file.size,
-          });
-          let whapiRes: Response;
-          try {
-            whapiRes = await fetch(whapiUrl, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${integration.token}`,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-              body: JSON.stringify({ to, media: signed.signedUrl }),
+          if (!isTestConversation) {
+            // Load Whapi integration (admin)
+            const { data: integration, error: integErr } = await supabaseAdmin
+              .from("workspace_integrations")
+              .select("api_url, token, enabled")
+              .eq("workspace_id", conv.workspace_id)
+              .eq("provider", "whapi")
+              .maybeSingle();
+            if (integErr) return jsonResponse({ error: "Erro ao buscar integração" }, 500);
+            if (!integration || !integration.enabled || !integration.token) {
+              return jsonResponse({ error: "Integração Whapi não configurada" }, 400);
+            }
+            if (!integration.api_url) {
+              return jsonResponse({ error: "URL da integração Whapi não configurada" }, 400);
+            }
+
+            const apiUrl = integration.api_url.replace(/\/$/, "");
+            const whapiUrl = `${apiUrl}/messages/voice`;
+            console.log("🎤 [whapi/send-audio] Enviando áudio para Whapi", {
+              to,
+              url: whapiUrl,
+              mime,
+              bytes: file.size,
             });
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            console.error("🎤 [whapi/send-audio] Falha de rede ao chamar Whapi:", msg);
-            return jsonResponse({ error: `Falha de rede ao contatar Whapi: ${msg}` }, 424);
-          }
+            let whapiRes: Response;
+            try {
+              whapiRes = await fetch(whapiUrl, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${integration.token}`,
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+                body: JSON.stringify({ to, media: signedUrl }),
+              });
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : String(e);
+              console.error("🎤 [whapi/send-audio] Falha de rede ao chamar Whapi:", msg);
+              return jsonResponse({ error: `Falha de rede ao contatar Whapi: ${msg}` }, 424);
+            }
 
-          const whapiText = await whapiRes.text();
-          let whapiJson: any = null;
-          try {
-            whapiJson = whapiText ? JSON.parse(whapiText) : null;
-          } catch {
-            /* not JSON */
-          }
-          if (!whapiRes.ok) {
-            console.error("🎤 [whapi/send-audio] Whapi retornou erro:", {
-              status: whapiRes.status,
-              body: whapiText.slice(0, 1000),
-            });
-            const apiErrMsg = getWhapiErrorMessage(whapiText, whapiJson);
-            return jsonResponse(
-              { error: `Whapi retornou ${whapiRes.status}: ${apiErrMsg}` },
-              mapWhapiStatus(whapiRes.status),
-            );
-          }
+            const whapiText = await whapiRes.text();
+            let whapiJson: any = null;
+            try {
+              whapiJson = whapiText ? JSON.parse(whapiText) : null;
+            } catch {
+              /* not JSON */
+            }
+            if (!whapiRes.ok) {
+              console.error("🎤 [whapi/send-audio] Whapi retornou erro:", {
+                status: whapiRes.status,
+                body: whapiText.slice(0, 1000),
+              });
+              const apiErrMsg = getWhapiErrorMessage(whapiText, whapiJson);
+              return jsonResponse(
+                { error: `Whapi retornou ${whapiRes.status}: ${apiErrMsg}` },
+                mapWhapiStatus(whapiRes.status),
+              );
+            }
 
-          console.log("🎤 [whapi/send-audio] ✅ Whapi aceitou o áudio");
-
-          const externalId: string | null =
-            whapiJson?.message?.id || whapiJson?.id || null;
+            console.log("🎤 [whapi/send-audio] ✅ Whapi aceitou o áudio");
+            externalId = whapiJson?.message?.id || whapiJson?.id || null;
+          } else {
+            console.log("🎤 [whapi/send-audio] Conversa de teste — pulando Whapi");
+          }
 
           // Insert message row
           const { data: inserted, error: insertErr } = await supabaseAdmin
