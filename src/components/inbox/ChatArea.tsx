@@ -93,6 +93,130 @@ export function ChatArea({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // ---- Audio recording state ----
+  const [recState, setRecState] = useState<"idle" | "rec" | "preview">("idle");
+  const [seconds, setSeconds] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioMime, setAudioMime] = useState<string>("audio/webm");
+  const [sendingAudio, setSendingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelledRef = useRef(false);
+
+  function stopStream() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  function resetAudio() {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioUrl(null);
+    setAudioBlob(null);
+    setSeconds(0);
+    setRecState("idle");
+  }
+
+  async function startRecording() {
+    if (composerLocked || sending || busy) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported?.("audio/mp4")
+          ? "audio/mp4"
+          : "";
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      cancelledRef.current = false;
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.onstop = () => {
+        stopStream();
+        if (cancelledRef.current) {
+          chunksRef.current = [];
+          return;
+        }
+        const type = mr.mimeType || mime || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type });
+        chunksRef.current = [];
+        const url = URL.createObjectURL(blob);
+        setAudioBlob(blob);
+        setAudioUrl(url);
+        setAudioMime(type);
+        setRecState("preview");
+      };
+      mr.start();
+      setSeconds(0);
+      setRecState("rec");
+      timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    } catch (e) {
+      toast.error("Não foi possível acessar o microfone.");
+      stopStream();
+    }
+  }
+
+  function stopRecording() {
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") mr.stop();
+  }
+
+  function cancelRecording() {
+    cancelledRef.current = true;
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") mr.stop();
+    else stopStream();
+    setSeconds(0);
+    setRecState("idle");
+  }
+
+  async function sendAudio() {
+    if (!audioBlob || !conversation) return;
+    setSendingAudio(true);
+    try {
+      const wasUnassigned = !conversation.assignedTo;
+      if (wasUnassigned && !isGroup) {
+        await api.assignConversation(conversation.id);
+      }
+      await api.sendAudioMessage(conversation.id, audioBlob, audioMime);
+      resetAudio();
+      onSent();
+      if (wasUnassigned && !isGroup) onAssigned();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar áudio");
+    } finally {
+      setSendingAudio(false);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopStream();
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    cancelRecording();
+    resetAudio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.id]);
+
+  function fmtTime(s: number) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  }
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
